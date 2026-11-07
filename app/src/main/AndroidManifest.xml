@@ -13,6 +13,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- MCP server: the foreground service keeps the loopback endpoint alive while a
+         desktop client is connected. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission
         android:name="android.permission.RECEIVE_BOOT_COMPLETED"
         tools:node="remove" />
@@ -75,6 +79,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- MCP server settings. Not exported: reachable only from the in-app settings page
+             and from the foreground service notification. -->
+        <activity
+            android:name=".feature.mcp.ui.McpSettingsActivity"
+            android:exported="false"
+            android:label="@string/mcp_settings_title" />
+
+        <!-- Hosts the loopback MCP endpoint while a client is connected. -->
+        <service
+            android:name=".feature.mcp.service.McpService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice"
+            android:stopWithTask="false" />
         <activity
             android:name=".feature.backup.ui.BackupActivity"
             android:exported="true"

@@ -50,6 +50,7 @@ import me.simpleHook.feature.config.ui.ConfigDialogFragment
 import me.simpleHook.feature.config.viewmodel.AppConfigViewModel
 import me.simpleHook.feature.config.viewmodel.CollectionViewModel
 import me.simpleHook.feature.main.ui.MainActivity
+import me.simpleHook.feature.mcp.ui.McpSettingsActivity
 import me.simpleHook.feature.record.viewmodel.RecordViewModel
 import me.simpleHook.feature.settings.viewmodel.SettingsViewModel
 import me.simpleHook.platform.shizuku.ShizukuFileManager
@@ -164,6 +165,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("toFridaConfig")?.apply {
             setOnPreferenceClickListener {
                 toFridaConfig()
+                true
+            }
+        }
+        findPreference<Preference>("mcpServer")?.apply {
+            setOnPreferenceClickListener {
+                startActivity(Intent(requireContext(), McpSettingsActivity::class.java))
                 true
             }
         }

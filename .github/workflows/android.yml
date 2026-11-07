@@ -6,9 +6,14 @@ on:
     tags: ["v*"]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verify:
@@ -31,8 +36,24 @@ jobs:
       - name: Install Android SDK packages
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
+      # Cheap cross-file checks for the MCP feature (resource keys, view ids, tool registry,
+      # Android-free protocol packages). The compiler below remains the authoritative gate.
+      - name: Static consistency checks
+        run: python3 scripts/check_mcp_static.py
+
       - name: Run unit tests
         run: bash ./gradlew :app:testRootDebugUnitTest --stacktrace
+
+      - name: Publish test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-report
+          path: |
+            app/build/reports/tests/testRootDebugUnitTest/**
+            app/build/test-results/testRootDebugUnitTest/**
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Assemble debug APK
         run: bash ./gradlew :app:assembleRootDebug --stacktrace
@@ -93,6 +114,9 @@ jobs:
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore_path"
           echo "SIGNING_STORE_FILE=$keystore_path" >> "$GITHUB_ENV"
 
+      - name: Static consistency checks
+        run: python3 scripts/check_mcp_static.py
+
       - name: Run unit tests
         run: bash ./gradlew :app:testRootDebugUnitTest --stacktrace
 
@@ -115,3 +139,51 @@ jobs:
       - name: Remove temporary keystore
         if: always()
         run: rm -f "$RUNNER_TEMP/simplehook-release.jks"
+
+  # Builds an installable debug APK on every push to the fork's main branch, so the MCP
+  # feature can be tested on a device without creating a tag.
+  nightly:
+    name: Debug APK (dated artifact)
+    if: github.ref_type == 'branch' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - uses: android-actions/setup-android@v4
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Assemble debug APK
+        run: bash ./gradlew :app:assembleRootDebug --stacktrace
+
+      - name: Collect APK with build metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          for apk in app/build/outputs/apk/root/debug/*.apk; do
+            base="$(basename "$apk")"
+            cp "$apk" "dist/${base%.apk}-$(date -u +%Y%m%d)-${GITHUB_SHA::7}.apk"
+          done
+          (cd dist && sha256sum ./*.apk > SHA256SUMS.txt)
+          {
+            echo "commit: $GITHUB_SHA"
+            echo "branch: $GITHUB_REF_NAME"
+            echo "built:  $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } > dist/BUILD-INFO.txt
+
+      - name: Upload dated debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: SimpleHook-debug-${{ github.sha }}
+          path: dist/**
+          if-no-files-found: error

@@ -41,6 +41,9 @@ interface ExtensionConfigDao {
     @Query("SELECT * FROM ExtensionConfigEntity WHERE packageName = '模板配置'")
     suspend fun queryDefaultExConfigs(): List<ExtensionConfigEntity>
 
+    @Query("SELECT * FROM ExtensionConfigEntity WHERE packageName = :packageName ORDER BY ID DESC LIMIT 1")
+    suspend fun getExtensionConfigByPackageName(packageName: String): ExtensionConfigEntity?
+
     @Query("SELECT count(*) from ExtensionConfigEntity where packageName = :packageName AND enable = 1")
     suspend fun getEnabledExtCountByPackageName(packageName: String): Int
 }

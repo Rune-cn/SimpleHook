@@ -900,5 +900,39 @@
     <string name="record_intent_value_to_string_format">值(toString): %1$s</string>
     <string name="record_intent_separator">=============================</string>
 
+    <!-- MCP server -->
+    <string name="main_settings_title_mcp">MCP 服务</string>
+    <string name="main_settings_summary_mcp">让 AI 客户端（如 Claude Desktop）读写 Hook 配置与记录</string>
+    <string name="mcp_settings_title">MCP 服务</string>
+    <string name="mcp_settings_server_section">服务状态</string>
+    <string name="mcp_settings_enable_server">启用 MCP 服务</string>
+    <string name="mcp_settings_status_enabled">运行中。客户端可通过下面列出的地址连接。</string>
+    <string name="mcp_settings_status_disabled">已停止。启用后会以常驻通知的形式运行。</string>
+    <string name="mcp_settings_transport_section">连接方式</string>
+    <string name="mcp_settings_enable_http">HTTP（Streamable HTTP，仅本机回环）</string>
+    <string name="mcp_settings_http_port">HTTP 端口</string>
+    <string name="mcp_settings_enable_stdio">stdio 桥接（通过桥接脚本连接）</string>
+    <string name="mcp_settings_stdio_port">stdio 桥接端口</string>
+    <string name="mcp_settings_allow_mutations">允许修改配置与删除记录</string>
+    <string name="mcp_settings_mutations_enabled_warning">已允许 AI 客户端修改 Hook 配置与删除记录，请只在信任的客户端上开启。</string>
+    <string name="mcp_settings_connection_section">连接信息</string>
+    <string name="mcp_settings_endpoint">服务地址</string>
+    <string name="mcp_settings_token">访问令牌（Authorization: Bearer）</string>
+    <string name="mcp_settings_pairing_hint">在客户端中填写上面的地址与令牌。手机与电脑不在同一网络时，可先执行 adb forward 将端口转发到本机。</string>
+    <string name="mcp_settings_adb_forward">adb forward tcp:%1$d tcp:%1$d</string>
+    <string name="mcp_settings_no_transport">未启用任何连接方式</string>
+    <string name="mcp_settings_copy_client_config">复制客户端配置</string>
+    <string name="mcp_settings_config_copied">已复制，可粘贴到客户端配置文件中</string>
+    <string name="mcp_settings_regenerate_token">重置令牌</string>
+    <string name="mcp_settings_regenerate_token_message">重置后已保存令牌的客户端将无法连接，需要重新填写。是否继续？</string>
+    <string name="mcp_settings_token_regenerated">令牌已重置</string>
+    <string name="mcp_settings_invalid_port">端口需在 1024 到 65535 之间</string>
+    <string name="mcp_settings_restart_required">设置已保存，重启 MCP 服务后生效</string>
+    <string name="mcp_settings_security_warning">安全提示：MCP 服务会把 Hook 配置与抓取到的记录（可能包含账号、令牌等敏感信息）暴露给已连接的客户端，请只使用你信任的客户端，并在不使用时关闭服务。</string>
+    <string name="mcp_service_notification_title">SimpleHook MCP 服务运行中</string>
+    <string name="mcp_service_notification_stop">停止</string>
+    <string name="mcp_service_channel_name">MCP 服务</string>
+    <string name="mcp_service_channel_description">MCP 服务运行状态</string>
+
 
 </resources>

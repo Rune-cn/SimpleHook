@@ -56,6 +56,11 @@
             app:key="toFridaConfig"
             app:summary="@string/main_settings_summary_frida_config"
             app:title="@string/main_settings_title_frida_config" />
+        <Preference
+            app:icon="@drawable/ic_settings_hub_24"
+            app:key="mcpServer"
+            app:summary="@string/main_settings_summary_mcp"
+            app:title="@string/main_settings_title_mcp" />
     </PreferenceCategory>
     <PreferenceCategory
         app:iconSpaceReserved="false"

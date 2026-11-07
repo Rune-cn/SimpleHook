@@ -35,4 +35,33 @@ object ConfigRemoteSyncHelper {
         val remoteDeleted = LSPosedHelper.deleteExtensionConfig(packageName)
         return localDeleted || remoteDeleted
     }
+
+    // --- Blocking variants -------------------------------------------------------------
+    // Used by the MCP transport, which serves requests from blocking socket threads.
+
+    fun saveCustomConfigSync(
+        configSystem: ConfigSystem,
+        packageName: String,
+        content: String
+    ): Boolean = kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+        saveCustomConfig(configSystem, packageName, content)
+    }
+
+    fun saveExtensionConfigSync(
+        configSystem: ConfigSystem,
+        packageName: String,
+        content: String
+    ): Boolean = kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+        saveExtensionConfig(configSystem, packageName, content)
+    }
+
+    fun deleteCustomConfigSync(configSystem: ConfigSystem, packageName: String): Boolean =
+        kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+            deleteCustomConfig(configSystem, packageName)
+        }
+
+    fun deleteExtensionConfigSync(configSystem: ConfigSystem, packageName: String): Boolean =
+        kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+            deleteExtensionConfig(configSystem, packageName)
+        }
 }

@@ -27,6 +27,15 @@ interface AppConfigDao {
     @Query("SELECT * FROM AppConfig WHERE appName LIKE:pattern or packageName LIKE:pattern ORDER BY ID DESC")
     suspend fun filterConfigs(pattern: String): List<AppConfig>
 
+    @Query("SELECT * FROM AppConfig WHERE packageName = :packageName ORDER BY ID DESC")
+    suspend fun getConfigsByPackageName(packageName: String): List<AppConfig>
+
+    @Query("SELECT * FROM AppConfig WHERE packageName = :packageName ORDER BY ID DESC LIMIT 1")
+    suspend fun getLatestConfigByPackageName(packageName: String): AppConfig?
+
+    @Query("SELECT * FROM AppConfig ORDER BY ID DESC")
+    suspend fun getAllConfigs(): List<AppConfig>
+
     @Query("SELECT packageName FROM AppConfig ORDER BY ID DESC")
     fun getAllPackageNames(): List<String>
 

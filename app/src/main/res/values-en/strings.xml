@@ -750,4 +750,38 @@ You can try signing it manually with MT Manager or a similar tool before install
     <string name="record_type_signature">Signature read</string>
     <string name="record_type_dialog">Dialog</string>
     <string name="record_type_popup_window">PopupWindow</string>
+
+    <!-- MCP server -->
+    <string name="main_settings_title_mcp">MCP server</string>
+    <string name="main_settings_summary_mcp">Let AI clients (e.g. Claude Desktop) read and edit hook configs and records</string>
+    <string name="mcp_settings_title">MCP server</string>
+    <string name="mcp_settings_server_section">Server state</string>
+    <string name="mcp_settings_enable_server">Enable MCP server</string>
+    <string name="mcp_settings_status_enabled">Running. Clients can connect using the address below.</string>
+    <string name="mcp_settings_status_disabled">Stopped. When enabled it runs as an ongoing notification.</string>
+    <string name="mcp_settings_transport_section">Transports</string>
+    <string name="mcp_settings_enable_http">HTTP (Streamable HTTP, loopback only)</string>
+    <string name="mcp_settings_http_port">HTTP port</string>
+    <string name="mcp_settings_enable_stdio">stdio bridge (via the bridge script)</string>
+    <string name="mcp_settings_stdio_port">stdio bridge port</string>
+    <string name="mcp_settings_allow_mutations">Allow changing configs and deleting records</string>
+    <string name="mcp_settings_mutations_enabled_warning">AI clients may now change hook configs and delete records. Only enable this for clients you trust.</string>
+    <string name="mcp_settings_connection_section">Connection details</string>
+    <string name="mcp_settings_endpoint">Endpoint</string>
+    <string name="mcp_settings_token">Access token (Authorization: Bearer)</string>
+    <string name="mcp_settings_pairing_hint">Enter the address and token above in your client. If the phone and computer are not on the same network, run adb forward first.</string>
+    <string name="mcp_settings_adb_forward">adb forward tcp:%1$d tcp:%1$d</string>
+    <string name="mcp_settings_no_transport">No transport enabled</string>
+    <string name="mcp_settings_copy_client_config">Copy client config</string>
+    <string name="mcp_settings_config_copied">Copied to clipboard; paste it into your client config</string>
+    <string name="mcp_settings_regenerate_token">Reset token</string>
+    <string name="mcp_settings_regenerate_token_message">Clients configured with the current token will stop working. Continue?</string>
+    <string name="mcp_settings_token_regenerated">Token reset</string>
+    <string name="mcp_settings_invalid_port">Port must be between 1024 and 65535</string>
+    <string name="mcp_settings_restart_required">Saved; restart the MCP server to apply</string>
+    <string name="mcp_settings_security_warning">Security: the MCP server exposes hook configs and captured records (which may contain accounts, tokens and other secrets) to connected clients. Only use clients you trust and stop the server when you are done.</string>
+    <string name="mcp_service_notification_title">SimpleHook MCP server running</string>
+    <string name="mcp_service_notification_stop">Stop</string>
+    <string name="mcp_service_channel_name">MCP server</string>
+    <string name="mcp_service_channel_description">MCP server status</string>
 </resources>

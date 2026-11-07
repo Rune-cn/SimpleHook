@@ -758,4 +758,38 @@
     <string name="record_type_signature">簽章讀取</string>
     <string name="record_type_dialog">對話方塊(Dialog)</string>
     <string name="record_type_popup_window">彈出視窗(PopupWindow)</string>
+
+    <!-- MCP server -->
+    <string name="main_settings_title_mcp">MCP 服務</string>
+    <string name="main_settings_summary_mcp">讓 AI 用戶端（如 Claude Desktop）讀寫 Hook 設定與紀錄</string>
+    <string name="mcp_settings_title">MCP 服務</string>
+    <string name="mcp_settings_server_section">服務狀態</string>
+    <string name="mcp_settings_enable_server">啟用 MCP 服務</string>
+    <string name="mcp_settings_status_enabled">執行中。用戶端可透過下方位址連線。</string>
+    <string name="mcp_settings_status_disabled">已停止。啟用後會以常駐通知的形式執行。</string>
+    <string name="mcp_settings_transport_section">連線方式</string>
+    <string name="mcp_settings_enable_http">HTTP（Streamable HTTP，僅本機回環）</string>
+    <string name="mcp_settings_http_port">HTTP 連接埠</string>
+    <string name="mcp_settings_enable_stdio">stdio 橋接（透過橋接腳本連線）</string>
+    <string name="mcp_settings_stdio_port">stdio 橋接連接埠</string>
+    <string name="mcp_settings_allow_mutations">允許修改設定與刪除紀錄</string>
+    <string name="mcp_settings_mutations_enabled_warning">已允許 AI 用戶端修改 Hook 設定與刪除紀錄，請只在信任的用戶端上開啟。</string>
+    <string name="mcp_settings_connection_section">連線資訊</string>
+    <string name="mcp_settings_endpoint">服務位址</string>
+    <string name="mcp_settings_token">存取權杖（Authorization: Bearer）</string>
+    <string name="mcp_settings_pairing_hint">在用戶端填寫上方位址與權杖。手機與電腦不在同一網路時，可先執行 adb forward 將連接埠轉送到本機。</string>
+    <string name="mcp_settings_adb_forward">adb forward tcp:%1$d tcp:%1$d</string>
+    <string name="mcp_settings_no_transport">未啟用任何連線方式</string>
+    <string name="mcp_settings_copy_client_config">複製用戶端設定</string>
+    <string name="mcp_settings_config_copied">已複製，可貼到用戶端設定檔中</string>
+    <string name="mcp_settings_regenerate_token">重設權杖</string>
+    <string name="mcp_settings_regenerate_token_message">重設後已儲存權杖的用戶端將無法連線，需要重新填寫。是否繼續？</string>
+    <string name="mcp_settings_token_regenerated">權杖已重設</string>
+    <string name="mcp_settings_invalid_port">連接埠需介於 1024 到 65535 之間</string>
+    <string name="mcp_settings_restart_required">設定已儲存，重新啟動 MCP 服務後生效</string>
+    <string name="mcp_settings_security_warning">安全提示：MCP 服務會把 Hook 設定與擷取到的紀錄（可能包含帳號、權杖等敏感資訊）暴露給已連線的用戶端，請只使用你信任的用戶端，並在不使用時關閉服務。</string>
+    <string name="mcp_service_notification_title">SimpleHook MCP 服務執行中</string>
+    <string name="mcp_service_notification_stop">停止</string>
+    <string name="mcp_service_channel_name">MCP 服務</string>
+    <string name="mcp_service_channel_description">MCP 服務執行狀態</string>
 </resources>

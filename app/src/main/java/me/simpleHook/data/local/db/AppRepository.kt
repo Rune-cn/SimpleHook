@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.LiveData
 import me.simpleHook.data.local.db.entity.AppConfig
 import me.simpleHook.data.local.db.entity.CollectionEntity
+import me.simpleHook.data.local.db.entity.ExtensionConfigEntity
 
 class AppRepository(context: Context) {
     private val appConfigDao = AppDatabase.getDatabase(context).getAppConfigDao()
@@ -42,7 +43,47 @@ class AppRepository(context: Context) {
 
     fun getAllPackageNames() = appConfigDao.getAllPackageNames()
 
+    fun getAllConfigList() = appConfigDao.getAll()
+
+    suspend fun getConfigsByPackage(packageName: String): List<AppConfig> =
+        appConfigDao.getConfigsByPackageName(packageName)
+
+    suspend fun getLatestConfigByPackage(packageName: String): AppConfig? =
+        appConfigDao.getLatestConfigByPackageName(packageName)
+
     fun getExtConfigs() = extConfigDao.getExtConfigs()
+
+    suspend fun getExtConfigByPackage(packageName: String): ExtensionConfigEntity? =
+        extConfigDao.getExtensionConfigByPackageName(packageName)
+
+    // --- Blocking variants -------------------------------------------------------------
+    // The MCP transport serves requests from blocking socket threads; these thin wrappers
+    // bridge to the suspending Room DAOs with runBlocking on an IO dispatcher. They exist
+    // only for that caller and must not be used from the UI thread.
+
+    fun updateConfigsSync(vararg appConfig: AppConfig) {
+        kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+            appConfigDao.updateConfigs(*appConfig)
+        }
+    }
+
+    fun deleteConfigsSync(vararg appConfig: AppConfig) {
+        kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+            appConfigDao.deleteConfigs(*appConfig)
+        }
+    }
+
+    fun insertExtConfigsSync(vararg config: ExtensionConfigEntity) {
+        kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+            extConfigDao.insertExtConfigs(*config)
+        }
+    }
+
+    fun updateExtConfigsSync(vararg config: ExtensionConfigEntity) {
+        kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+            extConfigDao.updateExtConfigs(*config)
+        }
+    }
 
     // collection
 

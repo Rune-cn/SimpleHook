@@ -189,4 +189,61 @@ interface RecordDao {
 
     @Query("DELETE FROM RecordEntity WHERE isMark = :isMark and packageName = :packageName")
     suspend fun deleteMarkedRecordByPack(isMark: Boolean, packageName: String)
+
+    // --- MCP query surface -------------------------------------------------------------
+    // Full rows for the MCP read tools. All filters are nullable; a null value disables the
+    // corresponding clause. `packagePattern`/`keyword` use LIKE with a caller-built pattern.
+
+    @Query(
+        """
+        SELECT * FROM RecordEntity
+        WHERE (:packageName IS NULL OR packageName = :packageName)
+          AND (:type IS NULL OR type = :type)
+          AND (:markedOnly = 0 OR isMark = 1)
+          AND (:keyword IS NULL OR record LIKE :keyword OR summaryTitle LIKE :keyword
+               OR summarySubtitle LIKE :keyword)
+        ORDER BY id DESC
+        LIMIT :limit OFFSET :offset
+        """
+    )
+    suspend fun queryRecords(
+        packageName: String?,
+        type: String?,
+        markedOnly: Boolean,
+        keyword: String?,
+        limit: Int,
+        offset: Int
+    ): List<RecordEntity>
+
+    @Query(
+        """
+        SELECT COUNT(*) FROM RecordEntity
+        WHERE (:packageName IS NULL OR packageName = :packageName)
+          AND (:type IS NULL OR type = :type)
+          AND (:markedOnly = 0 OR isMark = 1)
+          AND (:keyword IS NULL OR record LIKE :keyword OR summaryTitle LIKE :keyword
+               OR summarySubtitle LIKE :keyword)
+        """
+    )
+    suspend fun countRecords(
+        packageName: String?,
+        type: String?,
+        markedOnly: Boolean,
+        keyword: String?
+    ): Int
+
+    @Query("SELECT * FROM RecordEntity WHERE id = :id LIMIT 1")
+    suspend fun getRecordById(id: Int): RecordEntity?
+
+    @Query("SELECT * FROM RecordEntity WHERE id IN (:ids)")
+    suspend fun getRecordsByIds(ids: List<Int>): List<RecordEntity>
+
+    @Query("DELETE FROM RecordEntity WHERE id IN (:ids)")
+    suspend fun deleteRecordsByIds(ids: List<Int>): Int
+
+    @Query("SELECT packageName, COUNT(*) AS count FROM RecordEntity GROUP BY packageName ORDER BY count DESC")
+    suspend fun getRecordCountsByPackage(): List<RecordPackageCount>
+
+    @Query("SELECT type, COUNT(*) AS count FROM RecordEntity GROUP BY type ORDER BY count DESC")
+    suspend fun getRecordCountsByType(): List<RecordTypeCount>
 }

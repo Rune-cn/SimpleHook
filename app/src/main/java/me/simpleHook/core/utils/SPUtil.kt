@@ -44,6 +44,45 @@ open class SPUtil(context: Context, name: String = BuildConfig.APPLICATION_ID + 
 
     var recordCardStyle by SharedPreferenceDelegates.boolean(false)
 
+    // --- MCP server -------------------------------------------------------------------
+    /** Whether the MCP server may be started by the user. */
+    var mcpEnabled by SharedPreferenceDelegates.boolean(false)
+    var mcpHttpEnabled by SharedPreferenceDelegates.boolean(true)
+    var mcpHttpPort by SharedPreferenceDelegates.int(DEFAULT_MCP_HTTP_PORT)
+    var mcpStdioEnabled by SharedPreferenceDelegates.boolean(false)
+    var mcpStdioPort by SharedPreferenceDelegates.int(DEFAULT_MCP_STDIO_PORT)
+
+    /** Grants access to tools that modify configurations and records. */
+    var mcpAllowMutations by SharedPreferenceDelegates.boolean(false)
+
+    /** Bearer token required by the HTTP transport; generated lazily. */
+    var mcpAuthToken by SharedPreferenceDelegates.string("")
+
+    fun ensureMcpAuthToken(): String {
+        val current = mcpAuthToken
+        if (!current.isNullOrBlank() && current.length >= 32) return current
+        val generated = generateMcpAuthToken()
+        mcpAuthToken = generated
+        return generated
+    }
+
+    fun regenerateMcpAuthToken(): String {
+        val generated = generateMcpAuthToken()
+        mcpAuthToken = generated
+        return generated
+    }
+
+    private fun generateMcpAuthToken(): String {
+        val bytes = ByteArray(24)
+        java.security.SecureRandom().nextBytes(bytes)
+        return "shm_" + bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    companion object {
+        const val DEFAULT_MCP_HTTP_PORT = 57321
+        const val DEFAULT_MCP_STDIO_PORT = 57322
+    }
+
 
     fun remove(key: String) {
         preferences.edit { remove(key) }
