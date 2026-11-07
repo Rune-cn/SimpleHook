@@ -53,9 +53,9 @@ class McpServerCore(
      */
     suspend fun handle(message: JsonRpc.Request, transport: String): JsonObject {
         val meta = when (val parsed = McpRequestMeta.parse(message.params)) {
-            is McpRequestMeta.Result.Failure ->
+            is McpMetaResult.Failure ->
                 return JsonRpc.errorResponse(message.id, parsed.error)
-            is McpRequestMeta.Result.Success -> parsed.meta
+            is McpMetaResult.Success -> parsed.meta
         }
 
         if (!McpProtocolVersion.isSupported(meta.protocolVersion)) {

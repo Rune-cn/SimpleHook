@@ -34,8 +34,8 @@ data class McpRequestMeta(
          * `server/discover`, which is how a client learns the supported versions, can still
          * answer with an [`McpErrors.unsupportedProtocolVersion`] error.
          */
-        fun parse(params: JsonObject): Result {
-            val meta = params["_meta"] as? JsonObject ?: return Result.Failure(
+        fun parse(params: JsonObject): McpMetaResult {
+            val meta = params["_meta"] as? JsonObject ?: return McpMetaResult.Failure(
                 McpErrors.malformedMeta(
                     "Missing required params._meta with ${McpMetaKeys.PROTOCOL_VERSION}"
                 )
@@ -43,7 +43,7 @@ data class McpRequestMeta(
 
             val versionPrimitive = meta[McpMetaKeys.PROTOCOL_VERSION] as? JsonPrimitive
             if (versionPrimitive == null || !versionPrimitive.isString) {
-                return Result.Failure(
+                return McpMetaResult.Failure(
                     McpErrors.malformedMeta(
                         "Missing required string field _meta.${McpMetaKeys.PROTOCOL_VERSION}"
                     )
@@ -51,7 +51,7 @@ data class McpRequestMeta(
             }
             val version = versionPrimitive.content
             if (!McpProtocolVersion.looksLikeVersion(version)) {
-                return Result.Failure(
+                return McpMetaResult.Failure(
                     McpErrors.malformedMeta(
                         "Malformed _meta.${McpMetaKeys.PROTOCOL_VERSION}: $version"
                     )
@@ -60,7 +60,7 @@ data class McpRequestMeta(
 
             val capabilities = meta[McpMetaKeys.CLIENT_CAPABILITIES]
             if (capabilities !is JsonObject) {
-                return Result.Failure(
+                return McpMetaResult.Failure(
                     McpErrors.malformedMeta(
                         "Missing required object field _meta.${McpMetaKeys.CLIENT_CAPABILITIES}"
                     )
@@ -74,7 +74,7 @@ data class McpRequestMeta(
 
             val logLevel = (meta[McpMetaKeys.LOG_LEVEL] as? JsonPrimitive)?.content
 
-            return Result.Success(
+            return McpMetaResult.Success(
                 McpRequestMeta(
                     protocolVersion = version,
                     clientInfo = clientInfo,
@@ -84,9 +84,17 @@ data class McpRequestMeta(
             )
         }
 
-        sealed interface Result {
-            data class Success(val meta: McpRequestMeta) : Result
-            data class Failure(val error: JsonRpcError) : Result
-        }
     }
+}
+
+/**
+ * Outcome of parsing `params._meta`.
+ *
+ * Declared at file scope, not inside the companion object: a nested `Result` shadows
+ * `kotlin.Result` inside the companion, which silently changes the meaning of ordinary
+ * `Result`-returning expressions in this file.
+ */
+sealed interface McpMetaResult {
+    data class Success(val meta: McpRequestMeta) : McpMetaResult
+    data class Failure(val error: JsonRpcError) : McpMetaResult
 }

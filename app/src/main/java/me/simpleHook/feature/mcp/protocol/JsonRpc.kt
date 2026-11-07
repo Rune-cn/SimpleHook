@@ -24,7 +24,7 @@ object JsonRpc {
         fun toJson(): JsonPrimitive
         fun asString(): String = when (this) {
             is StringId -> value
-            is NumberId -> value
+            is NumberId -> value.toString()
         }
 
         data class StringId(val value: String) : Id {

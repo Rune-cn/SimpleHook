@@ -266,8 +266,9 @@ class ToolArguments(private val raw: JsonObject) {
             ?: throw ToolArgumentException("Argument '$name' must be an array of integers")
         return array.map { item ->
             val primitive = item as? JsonPrimitive
-                ?.takeIf { !it.isString }
-                ?: throw ToolArgumentException("Argument '$name' must be an array of integers")
+            if (primitive == null || primitive.isString) {
+                throw ToolArgumentException("Argument '$name' must be an array of integers")
+            }
             primitive.intOrNull
                 ?: throw ToolArgumentException("Argument '$name' must be an array of integers")
         }

@@ -146,7 +146,7 @@ class AndroidMcpDataSource(
 
         val page = latestPerPackage.drop(offset).take(limit).map { config ->
             val rules = decodeRules(config.configs)
-            val extension = appRepository.getExtConfigByPackage(config.packageName)
+            val extension = blocking { appRepository.getExtConfigByPackage(config.packageName) }
                 ?.takeIf { it.packageName != Constant.MODEL_EXTENSION_CONFIG }
             McpDataSource.ConfigSummary(
                 packageName = config.packageName,
@@ -164,8 +164,8 @@ class AndroidMcpDataSource(
     }
 
     override fun getConfig(packageName: String): McpDataSource.ConfigDetail? {
-        val config = appRepository.getLatestConfigByPackage(packageName) ?: return null
-        val extension = appRepository.getExtConfigByPackage(packageName)
+        val config = blocking { appRepository.getLatestConfigByPackage(packageName) } ?: return null
+        val extension = blocking { appRepository.getExtConfigByPackage(packageName) }
             ?.takeIf { it.packageName != Constant.MODEL_EXTENSION_CONFIG }
         return McpDataSource.ConfigDetail(
             packageName = config.packageName,
@@ -224,7 +224,7 @@ class AndroidMcpDataSource(
     }
 
     override fun deleteConfig(packageName: String): Boolean {
-        val config = appRepository.getLatestConfigByPackage(packageName) ?: return false
+        val config = blocking { appRepository.getLatestConfigByPackage(packageName) } ?: return false
         appRepository.deleteConfigsSync(config)
         ConfigRemoteSyncHelper.deleteCustomConfigSync(configSystem, packageName)
         syncScope(packageName)
@@ -233,7 +233,7 @@ class AndroidMcpDataSource(
 
     override fun patchExtension(packageName: String, patchJson: String): String {
         val patch = parseJsonObject(patchJson, "extension patch")
-        val existing = appRepository.getExtConfigByPackage(packageName)
+        val existing = blocking { appRepository.getExtConfigByPackage(packageName) }
             ?.takeIf { it.packageName != Constant.MODEL_EXTENSION_CONFIG }
         val appName = existing?.appName ?: AppUtil.getAppName(packageName)
         val base = if (existing != null && existing.config.isNotBlank()) {
@@ -251,9 +251,9 @@ class AndroidMcpDataSource(
             enable = existing?.enable ?: true
         )
         if (existing == null) {
-            extensionDao.insertExtConfigsSync(entity)
+            blocking { extensionDao.insertExtConfigs(entity) }
         } else {
-            extensionDao.updateExtConfigsSync(entity)
+            blocking { extensionDao.updateExtConfigs(entity) }
         }
         syncExtension(entity)
         syncScope(packageName)
@@ -282,10 +282,10 @@ class AndroidMcpDataSource(
         }
         val keywordPattern = keyword?.trim()?.takeIf { it.isNotEmpty() }?.let { "%$it%" }
 
-        val total = recordDao.countRecords(packageName, canonicalType, markedOnly, keywordPattern)
-        val rows = recordDao.queryRecords(
+        val total = blocking { recordDao.countRecords(packageName, canonicalType, markedOnly, keywordPattern) }
+        val rows = blocking { recordDao.queryRecords(
             packageName, canonicalType, markedOnly, keywordPattern, limit, offset
-        )
+        ) }
         return McpDataSource.RecordPage(
             records = rows.map { it.toRecordEntry() },
             offset = offset,
@@ -295,7 +295,7 @@ class AndroidMcpDataSource(
     }
 
     override fun getRecord(id: Int): McpDataSource.RecordDetail? {
-        val entity = recordDao.getRecordById(id) ?: return null
+        val entity = blocking { recordDao.getRecordById(id) } ?: return null
         return McpDataSource.RecordDetail(
             meta = entity.toRecordEntry(),
             recordJson = entity.record,
@@ -306,12 +306,12 @@ class AndroidMcpDataSource(
     override fun deleteRecords(ids: List<Int>): Int {
         if (ids.isEmpty()) return 0
         // Room binds one argument per id; delete in chunks to stay well below SQLite limits.
-        return ids.chunked(500).sumOf { chunk -> recordDao.deleteRecordsByIds(chunk) }
+        return ids.chunked(500).sumOf { chunk -> blocking { recordDao.deleteRecordsByIds(chunk) } }
     }
 
     override fun deleteRecordsOfPackage(packageName: String): Int {
-        val total = recordDao.countRecords(packageName, null, false, null)
-        recordDao.deleteRecordByPack(packageName)
+        val total = blocking { recordDao.countRecords(packageName, null, false, null) }
+        blocking { recordDao.deleteRecordByPack(packageName) }
         return total
     }
 
@@ -365,8 +365,18 @@ class AndroidMcpDataSource(
     // Internals
     // ---------------------------------------------------------------------------------
 
+    /**
+     * Blocks the calling (IO) thread until [block] finishes.
+     *
+     * `McpDataSource` is a blocking API because the transports serve requests from socket
+     * threads; the Room DAOs are suspending, so every call is bridged here on an IO
+     * dispatcher instead of leaking coroutine concerns into the tools.
+     */
+    private fun <T> blocking(block: suspend () -> T): T =
+        runBlocking(Dispatchers.IO) { block() }
+
     private fun requireConfig(packageName: String): AppConfig =
-        appRepository.getLatestConfigByPackage(packageName)
+        blocking { appRepository.getLatestConfigByPackage(packageName) }
             ?: throw IllegalArgumentException(
                 "No SimpleHook configuration exists for '$packageName'. " +
                     "Create it in the app first; MCP does not create configurations for new apps."
@@ -429,8 +439,8 @@ class AndroidMcpDataSource(
         if (packageName == Constant.MODEL_EXTENSION_CONFIG) return
         syncScope.launch {
             runCatching {
-                val custom = appConfigDao.getEnabledCountByPackageName(packageName)
-                val extension = extensionDao.getEnabledExtCountByPackageName(packageName)
+                val custom = blocking { appConfigDao.getEnabledCountByPackageName(packageName) }
+                val extension = blocking { extensionDao.getEnabledExtCountByPackageName(packageName) }
                 if (custom > 0 || extension > 0) {
                     LSPosedHelper.requestScopes(listOf(packageName))
                 } else {

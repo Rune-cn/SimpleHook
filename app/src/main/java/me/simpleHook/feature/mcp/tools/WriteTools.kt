@@ -170,7 +170,7 @@ class SetHookConfigTool(private val data: McpDataSource) : McpTool {
                 ?: throw ToolArgumentException("rules[$index] must be an object")
             try {
                 HookRuleSchema.read(obj)
-            } catch (error: ArgumentError) {
+            } catch (error: ToolArgumentException) {
                 throw ToolArgumentException("rules[$index]: ${error.message}")
             }
         }
@@ -253,11 +253,12 @@ class SetExtensionConfigTool(private val data: McpDataSource) : McpTool {
 
     override fun inputSchema(): JsonObject = JsonSchemaBuilder().apply {
         string("packageName", "Target package name.", required = true)
+        // A free-form object: the patch keys are validated by the data source, not here.
         schema(
             "patch",
-            JsonSchemaBuilder.nested {
-                put("type", "object")
-                put("additionalProperties", "true")
+            buildJsonObject {
+                put("type", JsonPrimitive("object"))
+                put("additionalProperties", JsonPrimitive(true))
             },
             required = true
         )
