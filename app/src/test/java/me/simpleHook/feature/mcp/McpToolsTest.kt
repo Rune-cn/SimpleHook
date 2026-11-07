@@ -46,15 +46,37 @@ class McpToolsTest {
 
     private fun data(allowMutations: Boolean = true) = FakeMcpDataSource(allowMutations = allowMutations)
 
-    private fun call(
+    /**
+     * Invokes [tool] the way the server does: through a registry, which converts
+     * [me.simpleHook.feature.mcp.protocol.ToolArgumentException] into an `isError` result.
+     * Calling the tool directly would bypass that conversion, so the tests would assert
+     * behaviour the server never produces.
+     */
+    private fun invoke(
         tool: McpTool,
-        arguments: JsonObject,
-        data: McpDataSource
-    ): ToolResult = runBlocking { tool.call(arguments.toArguments(), ctx) }
-
-    private fun JsonObject.toArguments() = me.simpleHook.feature.mcp.protocol.ToolArguments(this)
+        arguments: me.simpleHook.feature.mcp.protocol.ToolArguments,
+        allowMutations: Boolean = true
+    ): ToolResult {
+        val registry = McpToolRegistry(listOf(tool))
+        val outcome = runBlocking {
+            registry.call(
+                name = tool.name,
+                arguments = arguments.raw(),
+                ctx = ctx,
+                allowMutations = allowMutations
+            )
+        }
+        return when (outcome) {
+            is McpToolRegistry.Outcome.Result -> outcome.result
+            is McpToolRegistry.Outcome.ProtocolError ->
+                error("protocol error: ${outcome.error.message}")
+        }
+    }
 
     private fun ToolResult.structured(): JsonObject = structured as JsonObject
+
+    private fun ToolResult.hasError(): Boolean =
+        (toJson()["isError"] as JsonPrimitive).content.toBoolean()
 
     @Test
     fun `every registered tool has a unique valid name and object schema`() {
@@ -83,11 +105,8 @@ class McpToolsTest {
     @Test
     fun `list_records returns a page and rejects unknown types`() = runBlocking {
         val tool = ListRecordsTool(data())
-        val ok = tool.call(
-            toolArgs("""{"packageName":"com.example.login","limit":10}"""),
-            ctx
-        )
-        assertFalse(ok.isError)
+        val ok = invoke(tool, toolArgs("""{"packageName":"com.example.login","limit":10}"""))
+        assertFalse(ok.hasError())
         val payload = ok.structured()
         assertEquals(1, payload["returned"]!!.jsonPrimitive.content.toInt())
         assertEquals(1, payload["total"]!!.jsonPrimitive.content.toInt())
@@ -97,16 +116,16 @@ class McpToolsTest {
     @Test
     fun `list_records rejects an unknown argument name`() = runBlocking {
         val tool = ListRecordsTool(data())
-        val result = tool.call(toolArgs("""{"packageNam":"com.example.login"}"""), ctx)
-        assertTrue(result.isError)
+        val result = invoke(tool, toolArgs("""{"packageNam":"com.example.login"}"""))
+        assertTrue(result.hasError())
         assertTrue(result.text!!.contains("Unknown argument"))
     }
 
     @Test
     fun `get_hook_config exposes rules and extension json`() = runBlocking {
         val tool = GetHookConfigTool(data())
-        val result = tool.call(toolArgs("""{"packageName":"com.example.login"}"""), ctx)
-        assertFalse(result.isError)
+        val result = invoke(tool, toolArgs("""{"packageName":"com.example.login"}"""))
+        assertFalse(result.hasError())
         val payload = result.structured()
         val rules = payload["rules"]!!.jsonArray
         assertEquals(1, rules.size)
@@ -117,8 +136,8 @@ class McpToolsTest {
     @Test
     fun `get_hook_config reports a missing configuration as a tool error`() = runBlocking {
         val tool = GetHookConfigTool(data())
-        val result = tool.call(toolArgs("""{"packageName":"com.absent"}"""), ctx)
-        assertTrue(result.isError)
+        val result = invoke(tool, toolArgs("""{"packageName":"com.absent"}"""))
+        assertTrue(result.hasError())
     }
 
     @Test
@@ -143,8 +162,8 @@ class McpToolsTest {
             }
             """.trimIndent()
         )
-        val result = tool.call(arguments, ctx)
-        assertFalse(result.text ?: "", result.isError)
+        val result = invoke(tool, arguments)
+        assertFalse(result.text ?: "", result.hasError())
         val payload = result.structured()
         assertEquals(1, payload["rules"]!!.jsonArray.size)
         val rule = payload["rules"]!!.jsonArray.first().jsonObject
@@ -156,24 +175,21 @@ class McpToolsTest {
     @Test
     fun `set_hook_config rejects an unknown mode name`() = runBlocking {
         val tool = SetHookConfigTool(data())
-        val result = tool.call(
+        val result = invoke(
+            tool,
             toolArgs(
                 """{"packageName":"com.example.login","rules":[{"mode":"NOPE","className":"A"}]}"""
-            ),
-            ctx
+            )
         )
-        assertTrue(result.isError)
+        assertTrue(result.hasError())
         assertTrue(result.text!!.contains("Unknown mode"))
     }
 
     @Test
     fun `add_hook_rule requires a class name for method modes`() = runBlocking {
         val tool = AddHookRuleTool(data())
-        val result = tool.call(
-            toolArgs("""{"packageName":"com.example.login","rule":{"mode":"HOOK_RETURN"}}"""),
-            ctx
-        )
-        assertTrue(result.isError)
+        val result = invoke(tool, toolArgs("""{"packageName":"com.example.login","rule":{"mode":"HOOK_RETURN"}}"""))
+        assertTrue(result.hasError())
         assertTrue(result.text!!.contains("className"))
     }
 
@@ -181,39 +197,33 @@ class McpToolsTest {
     fun `set_extension_config forwards the patch and rejects an empty patch`() = runBlocking {
         val source = data()
         val tool = SetExtensionConfigTool(source)
-        val ok = tool.call(
+        val ok = invoke(
+            tool,
             toolArgs(
                 """{"packageName":"com.example.login","patch":{"popupConfig":{"recordDialog":true}}}"""
-            ),
-            ctx
+            )
         )
-        assertFalse(ok.isError)
+        assertFalse(ok.hasError())
         assertEquals(
             """{"popupConfig":{"recordDialog":true}}""",
             source.lastExtensionPatch
         )
 
-        val empty = tool.call(
-            toolArgs("""{"packageName":"com.example.login","patch":{}}"""),
-            ctx
-        )
-        assertTrue(empty.isError)
+        val empty = invoke(tool, toolArgs("""{"packageName":"com.example.login","patch":{}}"""))
+        assertTrue(empty.hasError())
     }
 
     @Test
     fun `delete_records requires exactly one selector`() = runBlocking {
         val tool = DeleteRecordsTool(data())
-        val none = tool.call(toolArgs("""{}"""), ctx)
-        assertTrue(none.isError)
+        val none = invoke(tool, toolArgs("""{}"""))
+        assertTrue(none.hasError())
 
-        val both = tool.call(
-            toolArgs("""{"ids":[1],"packageName":"com.example.login"}"""),
-            ctx
-        )
-        assertTrue(both.isError)
+        val both = invoke(tool, toolArgs("""{"ids":[1],"packageName":"com.example.login"}"""))
+        assertTrue(both.hasError())
 
-        val ok = tool.call(toolArgs("""{"ids":[1]}"""), ctx)
-        assertFalse(ok.isError)
+        val ok = invoke(tool, toolArgs("""{"ids":[1]}"""))
+        assertFalse(ok.hasError())
         assertEquals(1, ok.structured()["deleted"]!!.jsonPrimitive.content.toInt())
     }
 
@@ -223,7 +233,7 @@ class McpToolsTest {
         val registry = McpToolRegistry(listOf(failing))
         val outcome = registry.call("boom", JsonObject(emptyMap()), ctx, allowMutations = true)
         val result = (outcome as McpToolRegistry.Outcome.Result).result
-        assertTrue(result.isError)
+        assertTrue(result.hasError())
         assertFalse(result.text!!.contains("secret-token-xyz"))
     }
 

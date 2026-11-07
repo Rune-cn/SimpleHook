@@ -12,7 +12,17 @@ import kotlinx.serialization.json.put
  * prompt caches keep hitting (`docs/specification/2026-07-28/server/tools.mdx`, section
  * Capabilities), therefore tools are always returned sorted by name.
  */
-class McpToolRegistry(tools: Collection<McpTool>) {
+class McpToolRegistry(
+    tools: Collection<McpTool>,
+    /**
+     * When true, unexpected exception messages are copied into the tool result.
+     *
+     * Off by default: exception messages routinely contain file paths, URLs with embedded
+     * credentials and fragments of the data being processed, and tool results are handed to
+     * a model that may echo them back to the user.
+     */
+    private val includeFailureDetails: Boolean = false
+) {
 
     private val byName: Map<String, McpTool>
 
@@ -74,12 +84,18 @@ class McpToolRegistry(tools: Collection<McpTool>) {
         } catch (cancel: kotlinx.coroutines.CancellationException) {
             throw cancel
         } catch (throwable: Throwable) {
-            // Tool execution errors are reported inside the result so the model can react,
-            // but the message is sanitised: no stack traces or payloads leave the device.
+            // Tool execution errors are reported inside the result so the model can react.
+            // The message is generic on purpose: exception messages can carry paths and
+            // secrets, and the model may repeat them. The exception type is enough to tell
+            // "bad input" from "device problem".
+            val detail = if (includeFailureDetails) {
+                ": " + (throwable.message ?: "no details")
+            } else {
+                ""
+            }
             Outcome.Result(
                 ToolResult.failure(
-                    "${tool.name} failed: ${throwable.javaClass.simpleName}: " +
-                        (throwable.message ?: "no details")
+                    "${tool.name} failed (${throwable.javaClass.simpleName})$detail"
                 )
             )
         }
