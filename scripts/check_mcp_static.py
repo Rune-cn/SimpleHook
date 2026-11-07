@@ -99,7 +99,49 @@ def main() -> int:
                     "(it is covered by JVM unit tests)"
                 )
 
-    # 5. Locales must stay in sync for the keys this feature adds.
+    # 5. Every protocol symbol used inside feature/mcp must be imported or declared locally.
+    protocol_names = set()
+    for kt in SRC.rglob("*.kt"):
+        protocol_names |= set(re.findall(
+            r"^(?:internal |private )?(?:sealed |data |abstract |open )*"
+            r"(?:class|interface|object|enum class) (\w+)", read(kt), re.M))
+        protocol_names |= set(re.findall(r"^(?:internal )?fun (\w+)", read(kt), re.M))
+        protocol_names |= set(re.findall(r"^(?:internal )?(?:const )?val (\w+)", read(kt), re.M))
+    used_symbol = re.compile(r"(?<![\w.])(%s)\b" % "|".join(sorted(protocol_names)))
+
+    # Symbols are visible without an import when they live in the same package.
+    package_symbols: dict[str, set[str]] = {}
+    for kt in SRC.rglob("*.kt"):
+        text = read(kt)
+        pkg = re.search(r"^package\s+([\w.]+)", text, re.M)
+        if not pkg:
+            continue
+        names = set(re.findall(
+            r"^(?:internal |private )?(?:sealed |data |abstract |open )*"
+            r"(?:class|interface|object|enum class) (\w+)", text, re.M))
+        names |= set(re.findall(r"^(?:internal )?(?:fun|val|const val) (\w+)", text, re.M))
+        package_symbols.setdefault(pkg.group(1), set()).update(names)
+
+    for kt in sorted(SRC.rglob("*.kt")):
+        text = read(kt)
+        pkg_match = re.search(r"^package\s+([\w.]+)", text, re.M)
+        same_package = package_symbols.get(pkg_match.group(1), set()) if pkg_match else set()
+        imported = {m.group(1) for m in
+                    re.finditer(r"^import [\w.]+\.(\w+)(?:\s+as\s+\w+)?$", text, re.M)}
+        declared_here = set(re.findall(
+            r"^(?:internal |private )?(?:sealed |data |abstract |open )*"
+            r"(?:class|interface|object|enum class) (\w+)", text, re.M))
+        body = re.sub(r"^import .*$", "", text, flags=re.M)
+        for match in used_symbol.finditer(body):
+            name = match.group(1)
+            if name in imported or name in declared_here or name in same_package:
+                continue
+            problems.append(
+                f"{kt.relative_to(ROOT)}: '{name}' is used but not imported "
+                "(missing import will fail the build)"
+            )
+
+    # 6. Locales must stay in sync for the keys this feature adds.
     mcp_keys = {k for k in default_strings if k.startswith(("mcp_", "main_settings_title_mcp",
                                                            "main_settings_summary_mcp"))}
     for locale in ["values-en", "values-zh-rTW"]:

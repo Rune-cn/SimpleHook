@@ -7,6 +7,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import me.simpleHook.feature.mcp.protocol.JsonRpc
 import me.simpleHook.feature.mcp.protocol.JsonRpcError
+import me.simpleHook.feature.mcp.protocol.McpErrorCodes
 import me.simpleHook.feature.mcp.protocol.McpErrors
 import me.simpleHook.feature.mcp.protocol.McpProtocolVersion
 import me.simpleHook.feature.mcp.protocol.McpServerCore
