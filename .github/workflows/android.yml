@@ -44,6 +44,10 @@ jobs:
       - name: Run unit tests
         run: bash ./gradlew :app:testRootDebugUnitTest --stacktrace
 
+      - name: Summarise unit tests
+        if: always()
+        run: python3 scripts/summarize_tests.py
+
       - name: Publish test report
         if: always()
         uses: actions/upload-artifact@v7
