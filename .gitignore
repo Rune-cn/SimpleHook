@@ -7,3 +7,7 @@ sign.properties
 /build/reports/
 /.helloagents/
 .DS_Store
+
+# Python bytecode (scripts/)
+__pycache__/
+*.pyc
