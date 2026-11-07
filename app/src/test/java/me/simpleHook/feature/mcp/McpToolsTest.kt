@@ -14,6 +14,7 @@ import me.simpleHook.feature.mcp.protocol.ToolResult
 import me.simpleHook.feature.mcp.tools.AddHookRuleTool
 import me.simpleHook.feature.mcp.tools.DeleteRecordsTool
 import me.simpleHook.feature.mcp.tools.GetHookConfigTool
+import me.simpleHook.feature.mcp.tools.ListAppsTool
 import me.simpleHook.feature.mcp.tools.ListRecordsTool
 import me.simpleHook.feature.mcp.tools.SetHookConfigTool
 import me.simpleHook.feature.mcp.tools.SetExtensionConfigTool

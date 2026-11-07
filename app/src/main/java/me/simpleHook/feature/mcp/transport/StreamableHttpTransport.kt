@@ -220,7 +220,7 @@ class StreamableHttpTransport(
             return HttpCodec.Response.json(
                 403,
                 HttpCodec.reason(403),
-                jsonRpcError(null, JsonRpcError(4030, "Origin not allowed: $origin"))
+                jsonRpcError(null, JsonRpcError(McpErrorCodes.ORIGIN_FORBIDDEN, "Origin not allowed: $origin"))
             )
         }
 
@@ -229,7 +229,7 @@ class StreamableHttpTransport(
             return HttpCodec.Response(
                 status = 401,
                 reason = HttpCodec.reason(401),
-                body = jsonRpcError(null, JsonRpcError(4010, "Invalid or missing bearer token"))
+                body = jsonRpcError(null, JsonRpcError(McpErrorCodes.UNAUTHORIZED, "Invalid or missing bearer token"))
                     .toByteArray(Charsets.UTF_8),
                 contentType = "application/json",
                 extraHeaders = mapOf(

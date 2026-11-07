@@ -31,11 +31,12 @@ object McpErrorCodes {
     const val UNSUPPORTED_PROTOCOL_VERSION: Int = -32022
 
     /**
-     * Application-defined code (outside the reserved range) reported as a tool execution
-     * error for invalid arguments that a model can correct; the transport-level answer is
-     * still a normal `tools/call` result with `isError: true`.
+     * Application-defined codes. The specification says codes for purposes it does not
+     * define SHOULD live outside the JSON-RPC reserved range, so these are positive values
+     * that a JSON-RPC client will never confuse with a protocol error.
      */
-    const val TOOL_ARGUMENT_ERROR: Int = -32000
+    const val UNAUTHORIZED: Int = 4010
+    const val ORIGIN_FORBIDDEN: Int = 4030
 
     fun describe(code: Int): String = when (code) {
         PARSE_ERROR -> "Parse error"
@@ -46,6 +47,8 @@ object McpErrorCodes {
         HEADER_MISMATCH -> "Header mismatch"
         MISSING_REQUIRED_CLIENT_CAPABILITY -> "Missing required client capability"
         UNSUPPORTED_PROTOCOL_VERSION -> "Unsupported protocol version"
+        UNAUTHORIZED -> "Unauthorized"
+        ORIGIN_FORBIDDEN -> "Origin forbidden"
         else -> "Error"
     }
 }

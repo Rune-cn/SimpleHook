@@ -329,7 +329,7 @@ class TransportTest {
             out.flush()
             val response = Json.parseToJsonElement(input.readLine()).jsonObject
             val code = response["error"]!!.jsonObject["code"]!!.jsonPrimitive.content.toInt()
-            assertEquals(4010, code)
+            assertEquals(McpErrorCodes.UNAUTHORIZED, code)
         }
     }
 

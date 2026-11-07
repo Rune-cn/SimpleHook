@@ -130,7 +130,7 @@ class LineTransport(
         try {
             val handshake = readLine(reader) ?: return
             if (config.authToken != null && handshake.trim() != config.authToken) {
-                writeMessage(writer, jsonRpcError(null, JsonRpcError(4010, "Unauthorized")))
+                writeMessage(writer, jsonRpcError(null, JsonRpcError(McpErrorCodes.UNAUTHORIZED, "Unauthorized")))
                 return
             }
 
