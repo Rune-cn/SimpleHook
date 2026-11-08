@@ -100,8 +100,21 @@ class McpSelfCheckTest {
             "ok"
         }.getOrElse { "${it.javaClass.simpleName}: ${it.message}" }
 
+        // Replicate the checker's own connection code, to see whether the raw statement works
+        // from this call site.
+        val replicated = runCatching {
+            java.net.Socket().apply {
+                connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 3000)
+                soTimeout = 5000
+            }.use { "ok" }
+        }.getOrElse { "${it.javaClass.simpleName}: ${it.message}" }
+
         val checker = McpSelfCheck(port = serverPort, authToken = token)
         val direct = checker.run()
+        assertTrue(
+            "replicated connect: $replicated",
+            replicated == "ok"
+        )
         assertTrue(
             "probe after checker: $afterChecker ; running=${transport.isRunning}",
             afterChecker == "ok"
