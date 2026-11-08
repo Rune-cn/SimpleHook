@@ -29,9 +29,6 @@ class McpSelfCheckTest {
     private lateinit var transport: StreamableHttpTransport
     private var serverPort: Int = 0
 
-    /** Transport log lines, so a failure can report what the server believed. */
-    private val serverLog = java.util.concurrent.CopyOnWriteArrayList<String>()
-
     @Before
     fun setUp() {
         val core = McpServerCore(
@@ -41,8 +38,7 @@ class McpSelfCheckTest {
         )
         transport = StreamableHttpTransport(
             core = core,
-            config = HttpTransportConfig(port = 0, authToken = token),
-            logger = { serverLog.add(it) }
+            config = HttpTransportConfig(port = 0, authToken = token)
         )
         transport.start()
         serverPort = transport.boundPort
@@ -60,13 +56,8 @@ class McpSelfCheckTest {
         path: String = "/mcp",
         connectTimeoutMs: Int = 2_000,
         readTimeoutMs: Int = 2_000
-    ): McpSelfCheck.Result {
-        // The checker must be pointed at a real, bound port. This has caught a stale value
-        // (port 0 -> nothing to connect to) that otherwise surfaces only as "refused".
-        require(port in 1..65535) {
-            "diag: invalid port=$port serverPort=$serverPort bound=${transport.boundPort}"
-        }
-        return McpSelfCheck(
+    ): McpSelfCheck.Result =
+        McpSelfCheck(
             port = port,
             authToken = token,
             path = path,
@@ -76,74 +67,16 @@ class McpSelfCheckTest {
     }
 
     @Test
-    fun `diagnostic - server port is bound and reachable`() {
-        // Raw socket first: proves the OS accepts connections.
-        // Three ways to reach the same port, to isolate which one differs.
-        val plain = java.net.Socket()
-        plain.connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 2000)
-        plain.close()
-
-        val viaApply = java.net.Socket().apply {
-            connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 2000)
-            soTimeout = 2000
+    fun `server accepts connections before the check runs`() {
+        // Guards the harness itself: if this fails, the other assertions in this class would
+        // report a checker problem for what is really a broken fixture.
+        java.net.Socket().use { probe ->
+            probe.connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 2_000)
         }
-        viaApply.close()
-
-        val viaHelper = java.net.InetSocketAddress("127.0.0.1", serverPort)
-        val helper = java.net.Socket()
-        helper.connect(viaHelper, 2000)
-        helper.close()
-
-        // Then the checker itself, on the same port, so a failure here isolates the checker
-        // rather than the test setup.
-        // Probe again *after* the checker: if this also fails, the server died in between.
-        val afterChecker = runCatching {
-            val probe = java.net.Socket()
-            probe.connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 2000)
-            probe.close()
-            "ok"
-        }.getOrElse { "${it.javaClass.simpleName}: ${it.message}" }
-
-        // Replicate the checker's own connection code, to see whether the raw statement works
-        // from this call site.
-        val replicated = runCatching {
-            java.net.Socket().apply {
-                connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 3000)
-                soTimeout = 5000
-            }.use { "ok" }
-        }.getOrElse { "${it.javaClass.simpleName}: ${it.message}" }
-
-        val checker = McpSelfCheck(port = serverPort, authToken = token)
-        val direct = checker.run()
-
-        // Probe again *after* the checker has failed, to tell "server died" from "checker bug".
-        val afterFailure = runCatching {
-            java.net.Socket().apply { connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 3000) }
-                .use { "ok" }
-        }.getOrElse { "${it.javaClass.simpleName}: ${it.message}" }
-
-        assertTrue(
-            "replicated connect: $replicated ; afterFailure: $afterFailure ; serverLog=$serverLog",
-            replicated == "ok"
-        )
-        assertTrue(
-            "probe after checker: $afterChecker ; running=${transport.isRunning}",
-            afterChecker == "ok"
-        )
-        assertTrue(
-            "checker must succeed: dialled=${checker.target} expected=127.0.0.1:$serverPort " +
-                "stage=${direct.stage} msg=${direct.message} detail=${direct.detail} " +
-                "serverLog=$serverLog",
-            direct.ok
-        )
     }
 
     @Test
     fun `passes against a running server`() {
-        println("[diag] precheck isRunning=${transport.isRunning} boundPort=${transport.boundPort} serverPort=$serverPort")
-        assertTrue("server must be running", transport.isRunning)
-        assertTrue("boundPort must be > 0", transport.boundPort > 0)
-        assertEquals("field must match", transport.boundPort, serverPort)
         val result = check()
         assertTrue(result.message, result.ok)
         assertEquals(McpSelfCheck.Stage.DONE, result.stage)
@@ -167,12 +100,7 @@ class McpSelfCheckTest {
     @Test
     fun `reports HTTP stage with 401 when the token is wrong`() {
         val result = check(token = "wrong-token")
-        assertEquals(
-            "diag: serverPort=$serverPort bound=${transport.boundPort} running=${transport.isRunning} " +
-                "stage=${result.stage} status=${result.httpStatus} msg=${result.message}",
-            McpSelfCheck.Stage.HTTP,
-            result.stage
-        )
+        assertEquals(McpSelfCheck.Stage.HTTP, result.stage)
         assertEquals(401, result.httpStatus)
         assertTrue(result.message, result.message.contains("令牌"))
     }

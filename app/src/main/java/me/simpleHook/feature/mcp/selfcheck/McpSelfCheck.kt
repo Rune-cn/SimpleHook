@@ -72,14 +72,18 @@ class McpSelfCheck(
      * [Result.message] or [Result.detail].
      */
     fun run(): Result {
-        // Diagnostic: report exactly what this instance will dial, so a caller/test can prove
-        // the values reached the object.
-        target = "$host:$port"
+        // Resolve the target ONCE, into a local.
+        //
+        // Inside `Socket().apply { ... }` the receiver is the Socket, so a bare `port` would
+        // resolve to Socket.port (the already-connected port, -1 before connecting) and the
+        // connect would dial port -1. Using a local makes the target unambiguous.
+        val address = InetSocketAddress(host, port)
+        target = "${address.hostString}:${address.port}"
 
         // Stage 1: can we open a TCP connection at all?
         val socket = try {
             Socket().apply {
-                connect(InetSocketAddress(host, port), connectTimeoutMs)
+                connect(address, connectTimeoutMs)
                 soTimeout = readTimeoutMs
             }
         } catch (refused: ConnectException) {
