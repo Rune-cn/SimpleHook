@@ -67,6 +67,26 @@ class McpSettingsActivity : AppCompatActivity() {
         super.onResume()
         refreshConnectionInfo()
         McpService.addStateListener(stateListener)
+        restoreServerIfNeeded()
+    }
+
+    /**
+     * Re-launches the service when the user has it enabled but nothing is listening.
+     *
+     * The switch only records intent. If the process was killed (low memory, ROM cleaner,
+     * reboot) START_STICKY restart can be suppressed, and the user would otherwise see an
+     * enabled switch, a green "running" state from a previous session, and a port that
+     * refuses connections. Opening this screen is an explicit user action, which also makes
+     * the foreground-service start legal.
+     */
+    private fun restoreServerIfNeeded() {
+        if (!sp.mcpEnabled) return
+        if (McpService.isListening()) return
+        if (!McpService.start(this)) return
+        binding.textStatus.postDelayed(
+            { if (!isFinishing) updateStatusText() },
+            RESTORE_SETTLE_MS
+        )
     }
 
     override fun onPause() {
@@ -251,6 +271,16 @@ class McpSettingsActivity : AppCompatActivity() {
                     append("\n")
                     append(result.detail)
                 }
+                // The server side of the story: without it, "connection refused" cannot be
+                // distinguished from "service never started".
+                val trace = McpService.trace()
+                append("\n\n")
+                append(getString(R.string.mcp_settings_selfcheck_trace_title))
+                append(" ")
+                append(
+                    if (trace.isEmpty()) getString(R.string.mcp_settings_selfcheck_trace_empty)
+                    else trace.joinToString(" → ")
+                )
             }
             showSelfCheckResult(text, success = result.ok)
         }
@@ -340,5 +370,8 @@ class McpSettingsActivity : AppCompatActivity() {
     private companion object {
         /** Ports below 1024 are privileged on Linux and unusable for an app. */
         val PORT_RANGE = 1024..65535
+
+        /** Time allowed for the service to bind before the status is re-read. */
+        const val RESTORE_SETTLE_MS = 1200L
     }
 }

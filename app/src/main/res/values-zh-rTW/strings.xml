@@ -795,6 +795,8 @@
     <string name="mcp_settings_selfcheck_running">正在自檢：連線連接埠、傳送 server/discover…</string>
     <string name="mcp_settings_selfcheck_crashed">自檢過程發生錯誤</string>
     <string name="mcp_settings_selfcheck_copied">已複製自檢結果</string>
+    <string name="mcp_settings_selfcheck_trace_title">服務啟動紀錄：</string>
+    <string name="mcp_settings_selfcheck_trace_empty">無（服務未啟動過）</string>
     <string name="mcp_service_notification_starting">正在啟動…</string>
     <string name="mcp_service_http_bind_failed">HTTP 連接埠 %1$d 無法監聽（%2$s），可能已被其他應用或舊實例佔用</string>
     <string name="mcp_service_line_bind_failed">stdio 連接埠 %1$d 無法監聽（%2$s），可能已被佔用</string>

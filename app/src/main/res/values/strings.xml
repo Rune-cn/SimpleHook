@@ -936,6 +936,8 @@
     <string name="mcp_settings_selfcheck_running">正在自检：连接端口、发送 server/discover…</string>
     <string name="mcp_settings_selfcheck_crashed">自检过程出错</string>
     <string name="mcp_settings_selfcheck_copied">已复制自检结果</string>
+    <string name="mcp_settings_selfcheck_trace_title">服务启动记录：</string>
+    <string name="mcp_settings_selfcheck_trace_empty">无（服务未启动过）</string>
     <string name="mcp_service_notification_starting">正在启动…</string>
     <string name="mcp_service_http_bind_failed">HTTP 端口 %1$d 无法监听（%2$s），可能已被其他应用或旧实例占用</string>
     <string name="mcp_service_line_bind_failed">stdio 端口 %1$d 无法监听（%2$s），可能已被占用</string>

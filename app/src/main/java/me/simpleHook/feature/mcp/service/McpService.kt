@@ -58,7 +58,11 @@ class McpService : Service() {
         // built, and transports bind sockets. Doing any of that first risks the process being
         // killed, which leaves nothing listening on the port and produces ECONNREFUSED for
         // clients.
+        startTrace.clear()
+        note("onStartCommand")
+
         val foreground = startForegroundCompat()
+        note(if (foreground) "foreground=ok" else "foreground=refused")
         updateNotification(getString(R.string.mcp_service_notification_starting))
 
         // A restart must not leave two servers bound to the same ports.
@@ -66,8 +70,11 @@ class McpService : Service() {
         runningTransports.set(emptyList())
 
         val sp = SPUtil(applicationContext)
+        note("httpEnabled=${sp.mcpHttpEnabled} port=${sp.mcpHttpPort} " +
+            "stdioEnabled=${sp.mcpStdioEnabled} port=${sp.mcpStdioPort}")
         val data = AndroidMcpDataSource(applicationContext, sp)
         val core = McpServerFactory.create(data)
+        note("serverCore=built")
 
         val started = mutableListOf<String>()
         val failures = mutableListOf<String>()
@@ -83,10 +90,12 @@ class McpService : Service() {
                 .onSuccess {
                     http = transport
                     started += "HTTP :${transport.boundPort}"
+                    note("http=bound:${transport.boundPort}")
                 }
                 .onFailure { error ->
                     // The port may be taken by another app or by a previous instance of this
                     // service that has not been reaped yet; say so instead of staying silent.
+                    note("http=failed:${error.javaClass.simpleName}")
                     log("HTTP transport failed on port $port: ${error.javaClass.simpleName}")
                     failures += getString(
                         R.string.mcp_service_http_bind_failed,
@@ -122,6 +131,7 @@ class McpService : Service() {
         publishState()
 
         if (started.isEmpty()) {
+            note("no-transport")
             log("No MCP transport could be started: $failures")
             lastFailure.set(failures.joinToString("; ").ifEmpty {
                 getString(R.string.mcp_service_no_transport)
@@ -284,6 +294,23 @@ class McpService : Service() {
         private val lastFailure = java.util.concurrent.atomic.AtomicReference<String?>(null)
 
         /**
+         * Step-by-step record of the most recent start attempt.
+         *
+         * Exposed in the self-check result so a device where the service never binds can say
+         * *where* it stopped (never started / foreground refused / bind failed) instead of
+         * only reporting that the port refuses connections.
+         */
+        private val startTrace = java.util.concurrent.CopyOnWriteArrayList<String>()
+
+        fun trace(): List<String> = startTrace.toList()
+
+        private fun note(step: String) {
+            if (startTrace.size > 20) startTrace.clear()
+            startTrace.add(step)
+            android.util.Log.i(TAG, step)
+        }
+
+        /**
          * Listeners notified whenever the published state changes.
          *
          * A callback instead of a broadcast: the service and the settings screen live in the
@@ -340,8 +367,15 @@ class McpService : Service() {
             }
         }
 
+        /**
+         * Asks a running service to stop.
+         *
+         * `stopService` is used instead of sending an ACTION_STOP intent: on Android 8+,
+         * `startService` for a background app throws IllegalStateException when the service is
+         * not already running, so "stop" could crash exactly when there was nothing to stop.
+         */
         fun stop(context: Context) {
-            context.startService(Intent(context, McpService::class.java).setAction(ACTION_STOP))
+            context.stopService(Intent(context, McpService::class.java))
         }
 
         fun isConfigured(context: Context): Boolean {
