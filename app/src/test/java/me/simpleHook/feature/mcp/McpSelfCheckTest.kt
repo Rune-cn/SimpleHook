@@ -50,13 +50,13 @@ class McpSelfCheckTest {
     }
 
     private fun check(
-        port: Int = serverPort,
+        port: Int? = null,
         token: String? = this.token,
         path: String = "/mcp",
         connectTimeoutMs: Int = 2_000,
         readTimeoutMs: Int = 2_000
     ) = McpSelfCheck(
-        port = port,
+        port = port ?: serverPort,
         authToken = token,
         path = path,
         connectTimeoutMs = connectTimeoutMs,
@@ -120,6 +120,9 @@ class McpSelfCheckTest {
     @Test
     fun `success message never contains the bearer token`() {
         val result = check()
+        // Guard against a false positive: the check must actually have succeeded, otherwise
+        // "no token in the message" would pass for the trivial reason that there is no message.
+        assertTrue(result.message, result.ok)
         val combined = result.message + (result.detail ?: "")
         assertTrue("token must not be echoed", !combined.contains(token))
     }
