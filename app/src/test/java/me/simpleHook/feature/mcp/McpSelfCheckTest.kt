@@ -115,8 +115,15 @@ class McpSelfCheckTest {
 
         val checker = McpSelfCheck(port = serverPort, authToken = token)
         val direct = checker.run()
+
+        // Probe again *after* the checker has failed, to tell "server died" from "checker bug".
+        val afterFailure = runCatching {
+            java.net.Socket().apply { connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 3000) }
+                .use { "ok" }
+        }.getOrElse { "${it.javaClass.simpleName}: ${it.message}" }
+
         assertTrue(
-            "replicated connect: $replicated ; serverLog=$serverLog",
+            "replicated connect: $replicated ; afterFailure: $afterFailure ; serverLog=$serverLog",
             replicated == "ok"
         )
         assertTrue(
