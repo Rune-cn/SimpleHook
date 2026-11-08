@@ -298,6 +298,18 @@ class TransportTest {
         assertEquals(404, response.status)
     }
 
+    @Test
+    fun `second start on the same instance does not close the first listener`() {
+        // Guards the bug that made the MCP port refuse connections: a duplicate start must be
+        // a no-op, not a rebind that closes the socket the first call just published.
+        val firstPort = http.boundPort
+        http.start()
+        assertEquals(firstPort, http.boundPort)
+
+        val response = send("POST", toolsListBody(), standardHeaders("tools/list"))
+        assertEquals(200, response.status)
+    }
+
     // --- line transport ------------------------------------------------------------
 
     @Test

@@ -58,6 +58,12 @@ class McpService : Service() {
         // built, and transports bind sockets. Doing any of that first risks the process being
         // killed, which leaves nothing listening on the port and produces ECONNREFUSED for
         // clients.
+        if (!startInProgress.compareAndSet(false, true)) {
+            // A start is already running in this process; re-entering would close the
+            // socket that attempt is about to bind.
+            note("onStartCommand=ignored(already starting)")
+            return START_STICKY
+        }
         startTrace.clear()
         note("onStartCommand")
 
@@ -90,7 +96,7 @@ class McpService : Service() {
                 .onSuccess {
                     http = transport
                     started += "HTTP :${transport.boundPort}"
-                    note("http=bound:${transport.boundPort}")
+                    note("http=bound:${transport.boundPort} live=${transport.isRunning}")
                 }
                 .onFailure { error ->
                     // The port may be taken by another app or by a previous instance of this
@@ -144,6 +150,7 @@ class McpService : Service() {
                     getString(R.string.mcp_service_no_transport)
                 }
             )
+            startInProgress.set(false)
             android.os.Handler(mainLooper).postDelayed(
                 { stopSelf(startId) },
                 FAILED_NOTIFICATION_LINGER_MS
@@ -152,6 +159,7 @@ class McpService : Service() {
         }
 
         lastFailure.set(failures.joinToString("; ").takeIf { it.isNotEmpty() })
+        startInProgress.set(false)
         publishState()
         val summaryText = started.joinToString(" · ") +
             if (failures.isNotEmpty()) "\n" + failures.joinToString("\n") else ""
@@ -164,6 +172,7 @@ class McpService : Service() {
 
     override fun onDestroy() {
         stopServers()
+        startInProgress.set(false)
         runningTransports.set(emptyList())
         publishState()
         super.onDestroy()
@@ -290,6 +299,18 @@ class McpService : Service() {
             emptyList()
         )
 
+        /**
+         * True from the moment onStartCommand begins until the transports are bound or the
+         * attempt fails.
+         *
+         * runningEndpoints is only published after binding, so a caller checking it during
+         * start-up would see "nothing listening" and start the service again. The second
+         * onStartCommand calls stopServers() first, closing the socket the first attempt had
+         * just bound: the port then refuses every connection while the start trace still
+         * claims http=bound. This flag makes a duplicate start a no-op.
+         */
+        private val startInProgress = java.util.concurrent.atomic.AtomicBoolean(false)
+
         /** Reason the last start partially or fully failed, or null. */
         private val lastFailure = java.util.concurrent.atomic.AtomicReference<String?>(null)
 
@@ -335,6 +356,9 @@ class McpService : Service() {
         fun runningEndpoints(): List<String> = runningTransports.get()
 
         fun isListening(): Boolean = runningTransports.get().isNotEmpty()
+
+        /** True while a start attempt is running; a second start request is ignored. */
+        fun isStarting(): Boolean = startInProgress.get()
 
         fun failureReason(): String? = lastFailure.get()
 

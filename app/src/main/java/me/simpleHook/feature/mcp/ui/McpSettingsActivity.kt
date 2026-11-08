@@ -82,6 +82,8 @@ class McpSettingsActivity : AppCompatActivity() {
     private fun restoreServerIfNeeded() {
         if (!sp.mcpEnabled) return
         if (McpService.isListening()) return
+        // A start already in flight binds its sockets shortly; starting again would stop them.
+        if (McpService.isStarting()) return
         if (!McpService.start(this)) return
         binding.textStatus.postDelayed(
             { if (!isFinishing) updateStatusText() },
