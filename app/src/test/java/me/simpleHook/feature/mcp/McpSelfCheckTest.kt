@@ -74,9 +74,21 @@ class McpSelfCheckTest {
     @Test
     fun `diagnostic - server port is bound and reachable`() {
         // Raw socket first: proves the OS accepts connections.
-        val socket = java.net.Socket()
-        socket.connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 2000)
-        socket.close()
+        // Three ways to reach the same port, to isolate which one differs.
+        val plain = java.net.Socket()
+        plain.connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 2000)
+        plain.close()
+
+        val viaApply = java.net.Socket().apply {
+            connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 2000)
+            soTimeout = 2000
+        }
+        viaApply.close()
+
+        val viaHelper = java.net.InetSocketAddress("127.0.0.1", serverPort)
+        val helper = java.net.Socket()
+        helper.connect(viaHelper, 2000)
+        helper.close()
 
         // Then the checker itself, on the same port, so a failure here isolates the checker
         // rather than the test setup.
