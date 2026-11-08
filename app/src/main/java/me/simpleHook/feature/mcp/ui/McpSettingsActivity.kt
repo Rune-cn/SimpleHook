@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.text.InputType
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import me.simpleHook.BuildConfig
 import me.simpleHook.R
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
@@ -273,6 +274,9 @@ class McpSettingsActivity : AppCompatActivity() {
                     append("\n")
                     append(result.detail)
                 }
+                // Version first: a report against an older build cannot be diagnosed.
+                append("\n")
+                append(getString(R.string.mcp_settings_selfcheck_version, BuildConfig.VERSION_NAME))
                 // The server side of the story: without it, "connection refused" cannot be
                 // distinguished from "service never started".
                 val trace = McpService.trace()

@@ -788,6 +788,7 @@ You can try signing it manually with MT Manager or a similar tool before install
     <string name="mcp_settings_selfcheck_crashed">The self check itself failed</string>
     <string name="mcp_settings_selfcheck_copied">Self check result copied</string>
     <string name="mcp_settings_selfcheck_trace_title">Service start trace:</string>
+    <string name="mcp_settings_selfcheck_version">App version: %1$s</string>
     <string name="mcp_settings_selfcheck_trace_empty">none (the service never started)</string>
     <string name="mcp_service_notification_starting">Starting…</string>
     <string name="mcp_service_http_bind_failed">HTTP port %1$d could not be opened (%2$s); it may be in use by another app or an old instance</string>
