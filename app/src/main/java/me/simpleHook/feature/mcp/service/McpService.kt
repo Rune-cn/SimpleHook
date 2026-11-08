@@ -96,7 +96,7 @@ class McpService : Service() {
                 .onSuccess {
                     http = transport
                     started += "HTTP :${transport.boundPort}"
-                    note("http=bound:${transport.boundPort} live=${transport.isRunning}")
+                    note("http=bound:${transport.boundAddress}:${transport.boundPort} live=${transport.isRunning}")
                 }
                 .onFailure { error ->
                     // The port may be taken by another app or by a previous instance of this

@@ -69,9 +69,16 @@ class LineTransport(
 
     val isRunning: Boolean get() = running.get()
 
+    /**
+     * The loopback address to bind, pinned to IPv4 for the same reason as the HTTP transport:
+     * `getLoopbackAddress()` may yield `::1`, which a client dialling `127.0.0.1` cannot reach.
+     */
+    private fun loopbackAddress(): InetAddress =
+        InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1))
+
     fun start() {
         if (!running.compareAndSet(false, true)) return
-        val socket = ServerSocket(config.port, BACKLOG, InetAddress.getLoopbackAddress())
+        val socket = ServerSocket(config.port, BACKLOG, loopbackAddress())
         socket.soTimeout = ACCEPT_TIMEOUT_MS
         serverSocket = socket
         boundPort = socket.localPort

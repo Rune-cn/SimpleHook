@@ -91,6 +91,11 @@ class StreamableHttpTransport(
 
     private val activeConnections = AtomicInteger(0)
 
+    /** Address the socket is bound to, for diagnostics. */
+    @Volatile
+    var boundAddress: String = ""
+        private set
+
     /** Port actually bound (useful when [HttpTransportConfig.port] is 0). */
     @Volatile
     var boundPort: Int = -1
@@ -98,12 +103,24 @@ class StreamableHttpTransport(
 
     val endpointPath: String get() = config.path
 
+    /**
+     * The loopback address to bind.
+     *
+     * `InetAddress.getLoopbackAddress()` returns whatever the resolver reports first, which is
+     * `::1` on IPv6-first devices. A server bound to `::1` accepts `[::1]:port` but refuses
+     * `127.0.0.1:port` with ECONNREFUSED, while every Android MCP/HTTP client dials IPv4
+     * localhost. Binding IPv4 explicitly keeps the two ends on the same address family.
+     */
+    private fun loopbackAddress(): InetAddress =
+        InetAddress.getByAddress(byteArrayOf(127, 0, 0, 1))
+
     fun start() {
         if (!running.compareAndSet(false, true)) return
-        val socket = ServerSocket(config.port, BACKLOG, InetAddress.getLoopbackAddress())
+        val socket = ServerSocket(config.port, BACKLOG, loopbackAddress())
         socket.soTimeout = ACCEPT_TIMEOUT_MS
         serverSocket = socket
         boundPort = socket.localPort
+        boundAddress = socket.inetAddress?.hostAddress ?: "?"
         val thread = Thread({ acceptLoop(socket) }, "mcp-http-accept").apply { isDaemon = true }
         acceptThread.set(thread)
         thread.start()

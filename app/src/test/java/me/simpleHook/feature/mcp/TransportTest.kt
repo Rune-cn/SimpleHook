@@ -299,6 +299,16 @@ class TransportTest {
     }
 
     @Test
+    fun `binds IPv4 loopback so a 127_0_0_1 client can reach it`() {
+        // getLoopbackAddress() can yield ::1 on IPv6-first devices; a socket bound there
+        // refuses 127.0.0.1, which is what every Android MCP client dials.
+        assertEquals("127.0.0.1", http.boundAddress)
+        java.net.Socket().use { probe ->
+            probe.connect(java.net.InetSocketAddress("127.0.0.1", http.boundPort), 2_000)
+        }
+    }
+
+    @Test
     fun `second start on the same instance does not close the first listener`() {
         // Guards the bug that made the MCP port refuse connections: a duplicate start must be
         // a no-op, not a rebind that closes the socket the first call just published.
