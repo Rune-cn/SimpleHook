@@ -92,8 +92,20 @@ class McpSelfCheckTest {
 
         // Then the checker itself, on the same port, so a failure here isolates the checker
         // rather than the test setup.
+        // Probe again *after* the checker: if this also fails, the server died in between.
+        val afterChecker = runCatching {
+            val probe = java.net.Socket()
+            probe.connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 2000)
+            probe.close()
+            "ok"
+        }.getOrElse { "${it.javaClass.simpleName}: ${it.message}" }
+
         val checker = McpSelfCheck(port = serverPort, authToken = token)
         val direct = checker.run()
+        assertTrue(
+            "probe after checker: $afterChecker ; running=${transport.isRunning}",
+            afterChecker == "ok"
+        )
         assertTrue(
             "checker must succeed: dialled=${checker.target} expected=127.0.0.1:$serverPort " +
                 "stage=${direct.stage} msg=${direct.message} detail=${direct.detail}",
