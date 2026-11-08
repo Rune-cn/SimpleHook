@@ -73,11 +73,19 @@ class McpSelfCheckTest {
 
     @Test
     fun `diagnostic - server port is bound and reachable`() {
-        println("[diag] boundPort=$serverPort isRunning=${transport.isRunning}")
+        // Raw socket first: proves the OS accepts connections.
         val socket = java.net.Socket()
         socket.connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 2000)
-        println("[diag] connected local=\${socket.localPort}")
         socket.close()
+
+        // Then the checker itself, on the same port, so a failure here isolates the checker
+        // rather than the test setup.
+        val direct = McpSelfCheck(port = serverPort, authToken = token).run()
+        assertTrue(
+            "checker must succeed against a bound server: " +
+                "stage=${direct.stage} msg=${direct.message} detail=${direct.detail}",
+            direct.ok
+        )
     }
 
     @Test
