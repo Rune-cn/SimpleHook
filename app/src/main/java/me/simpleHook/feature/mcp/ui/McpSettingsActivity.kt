@@ -5,12 +5,18 @@ import android.text.InputType
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import me.simpleHook.R
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import me.simpleHook.core.extension.getColorByAttr
 import me.simpleHook.core.extension.showToast
 import me.simpleHook.core.utils.SPUtil
 import me.simpleHook.core.utils.ToolUtil
 import me.simpleHook.databinding.ActivityMcpSettingsBinding
 import me.simpleHook.feature.keepalive.KeepAliveActivity
 import me.simpleHook.feature.keepalive.KeepAlivePermissions
+import me.simpleHook.feature.mcp.selfcheck.McpSelfCheck
 import me.simpleHook.feature.mcp.service.McpService
 
 /**
@@ -54,6 +60,7 @@ class McpSettingsActivity : AppCompatActivity() {
         binding.buttonKeepAlive.setOnClickListener {
             startActivity(KeepAliveActivity.intent(this))
         }
+        binding.buttonSelfCheck.setOnClickListener { runSelfCheck() }
     }
 
     override fun onResume() {
@@ -192,6 +199,83 @@ class McpSettingsActivity : AppCompatActivity() {
             android.view.View.GONE
         } else {
             android.view.View.VISIBLE
+        }
+    }
+
+    /**
+     * Connects to the configured endpoint as a real client would and reports which stage
+     * failed. Runs off the main thread: the check blocks on socket I/O for up to a few seconds.
+     */
+    private fun runSelfCheck() {
+        if (!sp.mcpHttpEnabled) {
+            // Nothing to connect to; say so instead of reporting ECONNREFUSED.
+            showSelfCheckResult(
+                getString(R.string.mcp_settings_selfcheck_http_disabled),
+                success = false
+            )
+            return
+        }
+        // The check still runs when the service reports no listener: it distinguishes "service
+        // not started" from "started but the port is taken", which is what the user needs. The
+        // hint is prepended to the result instead of shown separately, so it cannot be
+        // overwritten by the "running" state a moment later.
+        val hint = if (McpService.isListening()) null
+        else getString(R.string.mcp_settings_selfcheck_not_started)
+
+        val port = sp.mcpHttpPort
+        val token = sp.ensureMcpAuthToken()
+        binding.buttonSelfCheck.isEnabled = false
+        showSelfCheckResult(getString(R.string.mcp_settings_selfcheck_running), success = null)
+
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching { McpSelfCheck(port = port, authToken = token).run() }
+                    .getOrElse { error ->
+                        McpSelfCheck.Result(
+                            stage = McpSelfCheck.Stage.PORT,
+                            ok = false,
+                            message = getString(R.string.mcp_settings_selfcheck_crashed),
+                            detail = "${error.javaClass.simpleName}: ${error.message}"
+                        )
+                    }
+            }
+            binding.buttonSelfCheck.isEnabled = true
+
+            val text = buildString {
+                if (hint != null) {
+                    append(hint)
+                    append("\n\n")
+                }
+                append(result.message)
+                if (!result.detail.isNullOrBlank()) {
+                    append("\n")
+                    append(result.detail)
+                }
+            }
+            showSelfCheckResult(text, success = result.ok)
+        }
+    }
+
+    /** @param success null while running, true/false after completion. */
+    private fun showSelfCheckResult(text: String, success: Boolean?) {
+        binding.textSelfCheck.visibility = android.view.View.VISIBLE
+        binding.textSelfCheck.text = text
+        binding.textSelfCheck.setTextColor(
+            when (success) {
+                null -> getColorByAttr(android.R.attr.textColorSecondary)
+                true -> getColorByAttr(android.R.attr.colorPrimary)
+                false -> getColorByAttr(android.R.attr.colorError)
+            }
+        )
+        if (success == false) {
+            // Make the diagnostic easy to paste into a bug report.
+            binding.textSelfCheck.setOnLongClickListener {
+                ToolUtil.toClip(this, text)
+                showToast(getString(R.string.mcp_settings_selfcheck_copied))
+                true
+            }
+        } else {
+            binding.textSelfCheck.setOnLongClickListener(null)
         }
     }
 

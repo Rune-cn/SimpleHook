@@ -789,6 +789,12 @@
     <string name="mcp_settings_restart_required">設定已儲存，重新啟動 MCP 服務後生效</string>
     <string name="mcp_settings_start_rejected">系統拒絕啟動 MCP 服務，請保持應用在前台後重試</string>
     <string name="mcp_settings_open_keepalive">通知或背景權限未開啟，去保活設定</string>
+    <string name="mcp_settings_selfcheck_action">自檢連線</string>
+    <string name="mcp_settings_selfcheck_http_disabled">已關閉 HTTP 傳輸，無法自檢；請先開啟 HTTP</string>
+    <string name="mcp_settings_selfcheck_not_started">提示：服務目前未回報已監聽，自檢結果可能是連接埠未開放</string>
+    <string name="mcp_settings_selfcheck_running">正在自檢：連線連接埠、傳送 server/discover…</string>
+    <string name="mcp_settings_selfcheck_crashed">自檢過程發生錯誤</string>
+    <string name="mcp_settings_selfcheck_copied">已複製自檢結果</string>
     <string name="mcp_service_notification_starting">正在啟動…</string>
     <string name="mcp_service_http_bind_failed">HTTP 連接埠 %1$d 無法監聽（%2$s），可能已被其他應用或舊實例佔用</string>
     <string name="mcp_service_line_bind_failed">stdio 連接埠 %1$d 無法監聽（%2$s），可能已被佔用</string>
