@@ -124,14 +124,16 @@ class KeepAliveActivity : AppCompatActivity() {
     /**
      * Uses the theme's semantic colours rather than new ones, so light/dark and dynamic colour
      * stay consistent with the rest of the app.
+     *
+     * `colorPrimary` / `colorError` are framework attributes (`android.R.attr`), which the
+     * app theme overrides with its Material palette. The fallback covers themes that leave
+     * an attribute unset.
      */
-    private fun statusColor(satisfied: Boolean): Int = getColorByAttr(
-        if (satisfied) {
-            com.google.android.material.R.attr.colorPrimary
-        } else {
-            com.google.android.material.R.attr.colorError
-        }
-    )
+    private fun statusColor(satisfied: Boolean): Int {
+        val attribute = if (satisfied) android.R.attr.colorPrimary else android.R.attr.colorError
+        return runCatching { getColorByAttr(attribute) }
+            .getOrElse { getColorByAttr(android.R.attr.textColorPrimary) }
+    }
 
     private fun applyAutostartState(state: KeepAliveState) {
         val page = state.vendorAutostartPage

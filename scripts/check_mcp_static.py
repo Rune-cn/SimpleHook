@@ -240,7 +240,29 @@ def main() -> int:
         if missing:
             problems.append(f"{locale}/strings.xml: missing {len(missing)} keep-alive string(s): {missing}")
 
-    # 8. Locales must stay in sync for the keys this feature adds.
+    # 8. `R.attr.*` references must name an attribute that actually exists.
+    #    The compiler catches this, but only after a full CI build; the common mistake is a
+    #    framework attribute referenced through the wrong R class, so the check lists the
+    #    framework attributes that are easy to confuse.
+    PLATFORM_ATTRS = {
+        "colorPrimary", "colorPrimaryDark", "colorAccent", "colorError",
+        "textColorPrimary", "textColorSecondary", "windowBackground", "colorBackground",
+        "colorBackgroundFloating", "colorControlNormal", "colorControlActivated",
+    }
+    features = APP / "java/me/simpleHook/feature"
+    for kt in sorted(features.rglob("*.kt")):
+        text = read(kt)
+        for prefix, attr in re.findall(
+            r"(androidx\.appcompat\.R|com\.google\.android\.material\.R)\.attr\.(\w+)",
+            text,
+        ):
+            if attr in PLATFORM_ATTRS:
+                problems.append(
+                    f"{kt.relative_to(ROOT)}: {prefix}.attr.{attr} does not exist "
+                    f"(it is android.R.attr.{attr})"
+                )
+
+    # 9. Locales must stay in sync for the keys this feature adds.
     mcp_keys = {k for k in default_strings if k.startswith(("mcp_", "main_settings_title_mcp",
                                                            "main_settings_summary_mcp"))}
     for locale in ["values-en", "values-zh-rTW"]:
