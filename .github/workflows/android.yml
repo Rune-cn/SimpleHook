@@ -179,25 +179,6 @@ jobs:
 
   # Builds an installable debug APK on every push to the fork's main branch, so the MCP
   # feature can be tested on a device without creating a tag.
-  selfcheck-isolated:
-    name: Self-check test in isolation
-    if: github.ref_type == 'branch' && github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          submodules: recursive
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: "17"
-          cache: gradle
-      - uses: android-actions/setup-android@v4
-      - name: Install Android SDK packages
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-      - name: Run only McpSelfCheckTest
-        run: bash ./gradlew :app:testRootDebugUnitTest --tests "me.simpleHook.feature.mcp.McpSelfCheckTest" --stacktrace
-
   nightly:
     name: Debug APK (dated artifact)
     if: github.ref_type == 'branch' && github.event_name != 'pull_request'
