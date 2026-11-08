@@ -64,7 +64,6 @@ class McpSelfCheckTest {
             connectTimeoutMs = connectTimeoutMs,
             readTimeoutMs = readTimeoutMs
         ).run()
-    }
 
     @Test
     fun `server accepts connections before the check runs`() {
