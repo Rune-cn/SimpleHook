@@ -87,7 +87,16 @@ class McpSelfCheck(
                 stage = Stage.PORT,
                 ok = false,
                 message = "端口 $port 没有进程在监听（Connection refused）",
-                detail = "${refused.javaClass.simpleName}: ${refused.message}",
+                detail = buildString {
+                    append(refused.javaClass.name).append(": ").append(refused.message)
+                    var cause = refused.cause
+                    var depth = 0
+                    while (cause != null && depth++ < 4) {
+                        append(" <- ").append(cause.javaClass.name)
+                            .append(": ").append(cause.message)
+                        cause = cause.cause
+                    }
+                },
             )
         } catch (timeout: SocketTimeoutException) {
             return Result(
