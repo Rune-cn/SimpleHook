@@ -789,6 +789,13 @@
     <string name="mcp_settings_restart_required">設定已儲存，重新啟動 MCP 服務後生效</string>
     <string name="mcp_settings_start_rejected">系統拒絕啟動 MCP 服務，請保持應用在前台後重試</string>
     <string name="mcp_settings_open_keepalive">通知或背景權限未開啟，去保活設定</string>
+    <string name="mcp_service_notification_starting">正在啟動…</string>
+    <string name="mcp_service_http_bind_failed">HTTP 連接埠 %1$d 無法監聽（%2$s），可能已被其他應用或舊實例佔用</string>
+    <string name="mcp_service_line_bind_failed">stdio 連接埠 %1$d 無法監聽（%2$s），可能已被佔用</string>
+    <string name="mcp_service_no_transport">沒有可用的傳輸方式，服務已停止</string>
+    <string name="mcp_settings_status_listening">執行中：%1$s（連接埠已監聽）</string>
+    <string name="mcp_settings_status_not_listening">已請求啟動，但連接埠尚未監聽</string>
+    <string name="mcp_settings_status_failed">啟動失敗：%1$s</string>
     <string name="mcp_settings_security_warning">安全提示：MCP 服務會把 Hook 設定與擷取到的紀錄（可能包含帳號、權杖等敏感資訊）暴露給已連線的用戶端，請只使用你信任的用戶端，並在不使用時關閉服務。</string>
     <string name="mcp_service_notification_title">SimpleHook MCP 服務執行中</string>
     <string name="mcp_service_notification_stop">停止</string>

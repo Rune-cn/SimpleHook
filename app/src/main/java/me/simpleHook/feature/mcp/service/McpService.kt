@@ -49,70 +49,113 @@ class McpService : Service() {
             return START_NOT_STICKY
         }
 
+        // Promote to the foreground FIRST.
+        //
+        // A service started with startForegroundService() must call startForeground() within
+        // an "ANR-comparable" interval, otherwise the system kills the process
+        // (ForegroundServiceDidNotStartInTimeException on Android 12+). Everything below this
+        // point can be slow on a cold start: Room opens its databases, the MCP data source is
+        // built, and transports bind sockets. Doing any of that first risks the process being
+        // killed, which leaves nothing listening on the port and produces ECONNREFUSED for
+        // clients.
+        val foreground = startForegroundCompat()
+        updateNotification(getString(R.string.mcp_service_notification_starting))
+
         // A restart must not leave two servers bound to the same ports.
         stopServers()
+        runningTransports.set(emptyList())
 
         val sp = SPUtil(applicationContext)
         val data = AndroidMcpDataSource(applicationContext, sp)
         val core = McpServerFactory.create(data)
 
-        var httpStarted = false
-        var lineStarted = false
+        val started = mutableListOf<String>()
+        val failures = mutableListOf<String>()
 
         if (sp.mcpHttpEnabled) {
+            val port = sp.mcpHttpPort
             val transport = StreamableHttpTransport(
                 core = core,
-                config = HttpTransportConfig(
-                    port = sp.mcpHttpPort,
-                    authToken = sp.ensureMcpAuthToken()
-                ),
+                config = HttpTransportConfig(port = port, authToken = sp.ensureMcpAuthToken()),
                 logger = { log(it) }
             )
-            runCatching {
-                transport.start()
-                http = transport
-                httpStarted = true
-            }.onFailure {
-                log("HTTP transport failed to start: ${it.javaClass.simpleName}")
-            }
+            runCatching { transport.start() }
+                .onSuccess {
+                    http = transport
+                    started += "HTTP :${transport.boundPort}"
+                }
+                .onFailure { error ->
+                    // The port may be taken by another app or by a previous instance of this
+                    // service that has not been reaped yet; say so instead of staying silent.
+                    log("HTTP transport failed on port $port: ${error.javaClass.simpleName}")
+                    failures += getString(
+                        R.string.mcp_service_http_bind_failed,
+                        port,
+                        error.javaClass.simpleName
+                    )
+                }
         }
 
         if (sp.mcpStdioEnabled) {
+            val port = sp.mcpStdioPort
             val transport = LineTransport(
                 core = core,
-                config = LineTransportConfig(
-                    port = sp.mcpStdioPort,
-                    authToken = sp.ensureMcpAuthToken()
-                ),
+                config = LineTransportConfig(port = port, authToken = sp.ensureMcpAuthToken()),
                 logger = { log(it) }
             )
-            runCatching {
-                transport.start()
-                line = transport
-                lineStarted = true
-            }.onFailure {
-                log("stdio bridge failed to start: ${it.javaClass.simpleName}")
-            }
+            runCatching { transport.start() }
+                .onSuccess {
+                    line = transport
+                    started += "stdio :${transport.boundPort}"
+                }
+                .onFailure { error ->
+                    log("stdio transport failed on port $port: ${error.javaClass.simpleName}")
+                    failures += getString(
+                        R.string.mcp_service_line_bind_failed,
+                        port,
+                        error.javaClass.simpleName
+                    )
+                }
         }
 
-        if (!httpStarted && !lineStarted) {
-            log("No MCP transport could be started")
-            stopSelf()
+        runningTransports.set(started.toList())
+        publishState()
+
+        if (started.isEmpty()) {
+            log("No MCP transport could be started: $failures")
+            lastFailure.set(failures.joinToString("; ").ifEmpty {
+                getString(R.string.mcp_service_no_transport)
+            })
+            publishState()
+            // Show why before stopping: a notification posted after stopSelf() disappears with
+            // the service, and the settings screen is not guaranteed to be visible.
+            updateNotification(
+                failures.joinToString("\n").ifEmpty {
+                    getString(R.string.mcp_service_no_transport)
+                }
+            )
+            android.os.Handler(mainLooper).postDelayed(
+                { stopSelf(startId) },
+                FAILED_NOTIFICATION_LINGER_MS
+            )
             return START_NOT_STICKY
         }
 
-        // Without the promotion the platform may still stop the service while the app is
-        // backgrounded, so tell the user rather than failing silently.
-        val foreground = startForegroundCompat()
+        lastFailure.set(failures.joinToString("; ").takeIf { it.isNotEmpty() })
+        publishState()
+        val summaryText = started.joinToString(" · ") +
+            if (failures.isNotEmpty()) "\n" + failures.joinToString("\n") else ""
         updateNotification(
-            if (foreground) summary(httpStarted, lineStarted)
+            if (foreground) summaryText
             else getString(R.string.mcp_service_notification_foreground_rejected)
         )
-        return START_NOT_STICKY
+        return START_STICKY
     }
 
     override fun onDestroy() {
         stopServers()
+        runningTransports.set(emptyList())
+        publishState()
         super.onDestroy()
     }
 
@@ -122,6 +165,7 @@ class McpService : Service() {
         http = null
         line = null
     }
+
 
     private fun summary(httpStarted: Boolean, lineStarted: Boolean): String {
         val parts = mutableListOf<String>()
@@ -219,8 +263,53 @@ class McpService : Service() {
         private const val CHANNEL_ID = "mcp_server"
         private const val NOTIFICATION_ID = 4201
 
+        /** How long a "nothing is listening" notification stays before the service stops. */
+        private const val FAILED_NOTIFICATION_LINGER_MS = 10_000L
+
         const val ACTION_STOP = "me.simpleHook.action.MCP_STOP"
         const val ACTION_START = "me.simpleHook.action.MCP_START"
+
+        /**
+         * Endpoints that are actually listening, e.g. `HTTP :57321`.
+         *
+         * Published by the service so the settings screen can distinguish "the user switched
+         * the server on" from "the port is really bound". Without this the screen could claim
+         * the server is running while nothing is listening and clients get ECONNREFUSED.
+         */
+        private val runningTransports = java.util.concurrent.atomic.AtomicReference<List<String>>(
+            emptyList()
+        )
+
+        /** Reason the last start partially or fully failed, or null. */
+        private val lastFailure = java.util.concurrent.atomic.AtomicReference<String?>(null)
+
+        /**
+         * Listeners notified whenever the published state changes.
+         *
+         * A callback instead of a broadcast: the service and the settings screen live in the
+         * same process, and a callback cannot be missed or spoofed by another app.
+         */
+        private val listeners = java.util.concurrent.CopyOnWriteArraySet<() -> Unit>()
+
+        /** Registers [listener]; it fires immediately with the current state. */
+        fun addStateListener(listener: () -> Unit) {
+            listeners.add(listener)
+            listener()
+        }
+
+        fun removeStateListener(listener: () -> Unit) {
+            listeners.remove(listener)
+        }
+
+        private fun publishState() {
+            listeners.forEach { callback -> runCatching { callback() } }
+        }
+
+        fun runningEndpoints(): List<String> = runningTransports.get()
+
+        fun isListening(): Boolean = runningTransports.get().isNotEmpty()
+
+        fun failureReason(): String? = lastFailure.get()
 
         /**
          * Starts the server service.

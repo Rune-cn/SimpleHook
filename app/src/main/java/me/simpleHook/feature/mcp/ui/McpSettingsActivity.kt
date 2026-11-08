@@ -27,6 +27,19 @@ class McpSettingsActivity : AppCompatActivity() {
 
     private val sp by lazy { SPUtil(applicationContext) }
 
+    /**
+     * Called by the service whenever it publishes a new state.
+     *
+     * The service binds sockets on its own thread, so the settings screen cannot assume the
+     * state right after `startForegroundService`; this callback delivers the real result
+     * (listening, or a bind failure) as soon as it is known.
+     */
+    private val stateListener: () -> Unit = {
+        runOnUiThread {
+            if (!isFinishing && !isDestroyed) updateStatusText()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMcpSettingsBinding.inflate(layoutInflater)
@@ -46,6 +59,12 @@ class McpSettingsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refreshConnectionInfo()
+        McpService.addStateListener(stateListener)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        McpService.removeStateListener(stateListener)
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -139,11 +158,31 @@ class McpSettingsActivity : AppCompatActivity() {
         refreshConnectionInfo()
     }
 
+    /**
+     * Shows what is actually running, not what the switch says.
+     *
+     * `McpService.runningEndpoints()` is published by the service after the sockets are
+     * bound, so "running" here means a client can connect. When the user enabled the server
+     * but the port is not bound, the failure reason is shown instead of a green state.
+     */
     private fun updateStatusText() {
-        binding.textStatus.text = getString(
-            if (sp.mcpEnabled) R.string.mcp_settings_status_enabled
-            else R.string.mcp_settings_status_disabled
-        )
+        val endpoints = McpService.runningEndpoints()
+        val failure = McpService.failureReason()
+        binding.textStatus.text = when {
+            endpoints.isNotEmpty() -> getString(
+                R.string.mcp_settings_status_listening,
+                endpoints.joinToString(" · ")
+            )
+
+            !sp.mcpEnabled -> getString(R.string.mcp_settings_status_disabled)
+
+            !failure.isNullOrBlank() && !McpService.isListening() -> getString(
+                R.string.mcp_settings_status_failed,
+                failure
+            )
+
+            else -> getString(R.string.mcp_settings_status_not_listening)
+        }
         // The foreground-service notification is the only way to stop the server from
         // outside the app; if it cannot be shown, point the user at the keep-alive screen.
         binding.buttonKeepAlive.visibility = if (

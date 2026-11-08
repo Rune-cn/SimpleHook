@@ -930,6 +930,13 @@
     <string name="mcp_settings_restart_required">设置已保存，重启 MCP 服务后生效</string>
     <string name="mcp_settings_start_rejected">系统拒绝启动 MCP 服务，请保持应用在前台后重试</string>
     <string name="mcp_settings_open_keepalive">通知或后台权限未开启，去保活设置</string>
+    <string name="mcp_service_notification_starting">正在启动…</string>
+    <string name="mcp_service_http_bind_failed">HTTP 端口 %1$d 无法监听（%2$s），可能已被其他应用或旧实例占用</string>
+    <string name="mcp_service_line_bind_failed">stdio 端口 %1$d 无法监听（%2$s），可能已被占用</string>
+    <string name="mcp_service_no_transport">没有可用的传输方式，服务已停止</string>
+    <string name="mcp_settings_status_listening">运行中：%1$s（端口已监听）</string>
+    <string name="mcp_settings_status_not_listening">已请求启动，但端口未在监听</string>
+    <string name="mcp_settings_status_failed">启动失败：%1$s</string>
     <string name="mcp_settings_security_warning">安全提示：MCP 服务会把 Hook 配置与抓取到的记录（可能包含账号、令牌等敏感信息）暴露给已连接的客户端，请只使用你信任的客户端，并在不使用时关闭服务。</string>
     <string name="mcp_service_notification_title">SimpleHook MCP 服务运行中</string>
     <string name="mcp_service_notification_stop">停止</string>
