@@ -70,7 +70,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    name: Build and publish release
+    name: Build signed release APK
     if: github.ref_type == 'tag'
     permissions:
       contents: write
@@ -127,18 +127,51 @@ jobs:
       - name: Assemble signed release APK
         run: bash ./gradlew :app:assembleRootRelease --stacktrace
 
+      - name: Verify signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk=$(ls app/build/outputs/apk/root/release/*.apk | head -1)
+          echo "apk=$apk" >> "$GITHUB_OUTPUT"
+          apksigner="${ANDROID_HOME}/build-tools/36.0.0/apksigner"
+          "$apksigner" verify --print-certs "$apk"
+
+      - name: Collect release APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          for apk in app/build/outputs/apk/root/release/*.apk; do
+            cp "$apk" "dist/$(basename "$apk")"
+          done
+          (cd dist && sha256sum ./*.apk > SHA256SUMS.txt)
+          {
+            echo "version: ${{ steps.release_version.outputs.version_name }}"
+            echo "commit:  $GITHUB_SHA"
+            echo "tag:     $GITHUB_REF_NAME"
+            echo "built:   $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } > dist/BUILD-INFO.txt
+          cat dist/BUILD-INFO.txt dist/SHA256SUMS.txt
+
+      - name: Upload signed release APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: SimpleHook-release-${{ steps.release_version.outputs.version_name }}
+          path: dist/**
+          if-no-files-found: error
+
+      # Publishing a GitHub Release page is opt-in: create the repository variable
+      # PUBLISH_RELEASE=true to enable it. Without it the workflow only uploads the signed
+      # APK as a workflow artifact.
       - name: Create GitHub release
+        if: vars.PUBLISH_RELEASE == 'true'
         uses: softprops/action-gh-release@v3
         with:
           name: ${{ steps.release_version.outputs.version_name }}
           prerelease: false
           generate_release_notes: true
           body: |
-            > **推荐使用 [HookNext](https://github.com/littleWhiteDuck/HookNextHome)**：它是 SimpleHook 的全新迭代升级版本，提供持续的功能演进与更好的使用体验。
-
             更新记录
-
-          files: app/build/outputs/apk/root/release/*.apk
 
       - name: Remove temporary keystore
         if: always()
