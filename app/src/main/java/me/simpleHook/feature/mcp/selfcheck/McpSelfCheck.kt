@@ -4,8 +4,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import me.simpleHook.feature.mcp.protocol.JsonRpc
 import me.simpleHook.feature.mcp.protocol.McpHttpHeaders
@@ -120,7 +118,7 @@ class McpSelfCheck(
                 val out = open.getOutputStream()
                 out.write(request.toByteArray(Charsets.UTF_8))
                 out.flush()
-                readResponse(open.getInputStream())
+                readResponse(BufferedInputStream(open.getInputStream()))
             } catch (timeout: SocketTimeoutException) {
                 return Result(
                     stage = Stage.HTTP,
