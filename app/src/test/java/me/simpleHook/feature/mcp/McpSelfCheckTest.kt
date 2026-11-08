@@ -74,6 +74,10 @@ class McpSelfCheckTest {
 
     @Test
     fun `passes against a running server`() {
+        println("[diag] precheck isRunning=${transport.isRunning} boundPort=${transport.boundPort} serverPort=$serverPort")
+        assertTrue("server must be running", transport.isRunning)
+        assertTrue("boundPort must be > 0", transport.boundPort > 0)
+        assertEquals("field must match", transport.boundPort, serverPort)
         val result = check()
         assertTrue(result.message, result.ok)
         assertEquals(McpSelfCheck.Stage.DONE, result.stage)
