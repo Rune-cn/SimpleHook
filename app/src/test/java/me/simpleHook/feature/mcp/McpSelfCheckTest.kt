@@ -56,13 +56,20 @@ class McpSelfCheckTest {
         path: String = "/mcp",
         connectTimeoutMs: Int = 2_000,
         readTimeoutMs: Int = 2_000
-    ): McpSelfCheck.Result = McpSelfCheck(
-        port = port,
-        authToken = token,
-        path = path,
-        connectTimeoutMs = connectTimeoutMs,
-        readTimeoutMs = readTimeoutMs
-    ).run()
+    ): McpSelfCheck.Result {
+        // The checker must be pointed at a real, bound port. This has caught a stale value
+        // (port 0 -> nothing to connect to) that otherwise surfaces only as "refused".
+        require(port in 1..65535) {
+            "diag: invalid port=$port serverPort=$serverPort bound=${transport.boundPort}"
+        }
+        return McpSelfCheck(
+            port = port,
+            authToken = token,
+            path = path,
+            connectTimeoutMs = connectTimeoutMs,
+            readTimeoutMs = readTimeoutMs
+        ).run()
+    }
 
     @Test
     fun `diagnostic - server port is bound and reachable`() {
@@ -101,10 +108,13 @@ class McpSelfCheckTest {
 
     @Test
     fun `reports HTTP stage with 401 when the token is wrong`() {
-        println("[diag-401] serverPort=$serverPort isRunning=${transport.isRunning} bound=${transport.boundPort}")
         val result = check(token = "wrong-token")
-        println("[diag-401] stage=${result.stage} status=${result.httpStatus} msg=${result.message}")
-        assertEquals(McpSelfCheck.Stage.HTTP, result.stage)
+        assertEquals(
+            "diag: serverPort=$serverPort bound=${transport.boundPort} running=${transport.isRunning} " +
+                "stage=${result.stage} status=${result.httpStatus} msg=${result.message}",
+            McpSelfCheck.Stage.HTTP,
+            result.stage
+        )
         assertEquals(401, result.httpStatus)
         assertTrue(result.message, result.message.contains("令牌"))
     }
