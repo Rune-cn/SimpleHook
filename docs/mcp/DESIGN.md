@@ -1,5 +1,8 @@
 # SimpleHook MCP Server — Design
 
+> 本文档记录**设计与协议依据**。工程现状、已修复的问题、待办与验证方式见
+> [`HANDOVER.md`](HANDOVER.md)；两者冲突时以 HANDOVER 为准。
+
 This document records the protocol research and the architecture decisions behind the
 MCP (Model Context Protocol) integration. Every protocol fact below carries the source
 page and the revision it was read from.

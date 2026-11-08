@@ -245,9 +245,11 @@ class SetExtensionConfigTool(private val data: McpDataSource) : McpTool {
     override val title: String = "Change extension switches"
     override val description: String =
         "Merges a patch into the extension configuration of a package, creating the " +
-            "extension entry if the app has none. Only the given keys change. Unknown keys are " +
-            "rejected. Valid keys follow the app's extension model, e.g. " +
-            "'popupConfig.recordDialog', 'jsonConfig.recordObject', 'filterClipboard.enable'."
+            "extension entry if the app has none. Only the given keys change; other keys keep " +
+            "their current value. Keys are NOT validated against the extension model, so use " +
+            "the exact names from the app's extension settings, e.g. " +
+            "'popupConfig.recordDialog', 'jsonConfig.recordObject', 'filterClipboard.enable'. " +
+            "A misspelled key is stored but has no effect."
 
     override val mutating: Boolean = true
 

@@ -163,7 +163,7 @@ public boolean isVip() { return false; }
 ## 调试与导出
 
 - **DEX 浏览器**：选择已安装应用或 APK，浏览类、方法、字段，并将目标信息带入配置。
-- **MCP 服务**：在设置 → 实验功能中开启后，Claude Desktop 等 AI 客户端可通过 MCP 读取/修改 Hook 配置与记录。基于 MCP `2026-07-28`，仅监听本机回环并需要访问令牌，详见 [`docs/mcp/README.md`](app/src/main/assets/mcp/README.md)。
+- **MCP 服务**：在设置 → 实验功能中开启后，Claude Desktop 等 AI 客户端可通过 MCP 读取/修改 Hook 配置与记录。基于 MCP `2026-07-28`，仅监听本机回环并需要访问令牌。使用说明见 [`docs/mcp/README.md`](app/src/main/assets/mcp/README.md)，开发者请从 [`docs/mcp/HANDOVER.md`](docs/mcp/HANDOVER.md) 开始。
 - **Smali 转配置**：粘贴字段/方法签名或调用语句，减少手工填写错误。
 - **配置收藏与模板**：复用常用 Hook 组合；支持导入、导出、备份和恢复。
 - **Frida 脚本导出**：在设置中选择导出 Frida Hook 脚本，将当前自定义配置转换为可调整的 Frida Java 脚本。
