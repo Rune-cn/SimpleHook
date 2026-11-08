@@ -27,7 +27,7 @@ class McpSelfCheckTest {
 
     private val token = "shm_selfcheck_token"
     private lateinit var transport: StreamableHttpTransport
-    private var port: Int = 0
+    private var serverPort: Int = 0
 
     @Before
     fun setUp() {
@@ -41,7 +41,7 @@ class McpSelfCheckTest {
             config = HttpTransportConfig(port = 0, authToken = token)
         )
         transport.start()
-        port = transport.boundPort
+        serverPort = transport.boundPort
     }
 
     @After
@@ -50,7 +50,7 @@ class McpSelfCheckTest {
     }
 
     private fun check(
-        port: Int = this.port,
+        port: Int = serverPort,
         token: String? = this.token,
         path: String = "/mcp",
         connectTimeoutMs: Int = 2_000,
@@ -62,6 +62,15 @@ class McpSelfCheckTest {
         connectTimeoutMs = connectTimeoutMs,
         readTimeoutMs = readTimeoutMs
     ).run()
+
+    @Test
+    fun `diagnostic - server port is bound and reachable`() {
+        println("[diag] boundPort=$serverPort isRunning=\${transport.isRunning}")
+        val socket = java.net.Socket()
+        socket.connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 2000)
+        println("[diag] connected local=\${socket.localPort}")
+        socket.close()
+    }
 
     @Test
     fun `passes against a running server`() {
