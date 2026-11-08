@@ -29,6 +29,9 @@ class McpSelfCheckTest {
     private lateinit var transport: StreamableHttpTransport
     private var serverPort: Int = 0
 
+    /** Transport log lines, so a failure can report what the server believed. */
+    private val serverLog = java.util.concurrent.CopyOnWriteArrayList<String>()
+
     @Before
     fun setUp() {
         val core = McpServerCore(
@@ -38,7 +41,8 @@ class McpSelfCheckTest {
         )
         transport = StreamableHttpTransport(
             core = core,
-            config = HttpTransportConfig(port = 0, authToken = token)
+            config = HttpTransportConfig(port = 0, authToken = token),
+            logger = { serverLog.add(it) }
         )
         transport.start()
         serverPort = transport.boundPort
@@ -112,7 +116,7 @@ class McpSelfCheckTest {
         val checker = McpSelfCheck(port = serverPort, authToken = token)
         val direct = checker.run()
         assertTrue(
-            "replicated connect: $replicated",
+            "replicated connect: $replicated ; serverLog=$serverLog",
             replicated == "ok"
         )
         assertTrue(
@@ -121,7 +125,8 @@ class McpSelfCheckTest {
         )
         assertTrue(
             "checker must succeed: dialled=${checker.target} expected=127.0.0.1:$serverPort " +
-                "stage=${direct.stage} msg=${direct.message} detail=${direct.detail}",
+                "stage=${direct.stage} msg=${direct.message} detail=${direct.detail} " +
+                "serverLog=$serverLog",
             direct.ok
         )
     }
