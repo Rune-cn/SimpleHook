@@ -49,14 +49,15 @@ class McpSelfCheckTest {
         transport.stop()
     }
 
+    /** Runs the checker against [port] (defaults to the bound server port). */
     private fun check(
-        port: Int? = null,
+        port: Int = serverPort,
         token: String? = this.token,
         path: String = "/mcp",
         connectTimeoutMs: Int = 2_000,
         readTimeoutMs: Int = 2_000
-    ) = McpSelfCheck(
-        port = port ?: serverPort,
+    ): McpSelfCheck.Result = McpSelfCheck(
+        port = port,
         authToken = token,
         path = path,
         connectTimeoutMs = connectTimeoutMs,
@@ -65,7 +66,7 @@ class McpSelfCheckTest {
 
     @Test
     fun `diagnostic - server port is bound and reachable`() {
-        println("[diag] boundPort=$serverPort isRunning=\${transport.isRunning}")
+        println("[diag] boundPort=$serverPort isRunning=${transport.isRunning}")
         val socket = java.net.Socket()
         socket.connect(java.net.InetSocketAddress("127.0.0.1", serverPort), 2000)
         println("[diag] connected local=\${socket.localPort}")
@@ -100,7 +101,9 @@ class McpSelfCheckTest {
 
     @Test
     fun `reports HTTP stage with 401 when the token is wrong`() {
+        println("[diag-401] serverPort=$serverPort isRunning=${transport.isRunning} bound=${transport.boundPort}")
         val result = check(token = "wrong-token")
+        println("[diag-401] stage=${result.stage} status=${result.httpStatus} msg=${result.message}")
         assertEquals(McpSelfCheck.Stage.HTTP, result.stage)
         assertEquals(401, result.httpStatus)
         assertTrue(result.message, result.message.contains("令牌"))
