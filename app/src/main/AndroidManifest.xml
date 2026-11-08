@@ -21,6 +21,10 @@
          have and must not request. `specialUse` only requires this normal permission. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Keep-alive screen: lets the app ask the system for a battery-optimisation exemption
+         (the "unrestricted background" state). Normal permission; the system shows the
+         confirmation dialog itself. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission
         android:name="android.permission.RECEIVE_BOOT_COMPLETED"
         tools:node="remove" />
@@ -89,6 +93,13 @@
             android:name=".feature.mcp.ui.McpSettingsActivity"
             android:exported="false"
             android:label="@string/mcp_settings_title" />
+
+        <!-- Keep-alive: notification + battery-optimisation status and requests. Not
+             exported; opened from the settings page. -->
+        <activity
+            android:name=".feature.keepalive.KeepAliveActivity"
+            android:exported="false"
+            android:label="@string/keepalive_title" />
 
         <!-- Hosts the loopback MCP endpoint while a client is connected.
              `specialUse` is the correct type for a device-local server that is not a

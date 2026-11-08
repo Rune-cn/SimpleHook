@@ -9,6 +9,8 @@ import me.simpleHook.core.extension.showToast
 import me.simpleHook.core.utils.SPUtil
 import me.simpleHook.core.utils.ToolUtil
 import me.simpleHook.databinding.ActivityMcpSettingsBinding
+import me.simpleHook.feature.keepalive.KeepAliveActivity
+import me.simpleHook.feature.keepalive.KeepAlivePermissions
 import me.simpleHook.feature.mcp.service.McpService
 
 /**
@@ -36,6 +38,9 @@ class McpSettingsActivity : AppCompatActivity() {
         binding.buttonCopyConfig.setOnClickListener { copyClientConfig() }
         binding.buttonRegenerateToken.setOnClickListener { confirmRegenerateToken() }
         binding.switchServer.setOnCheckedChangeListener { _, checked -> onServerToggled(checked) }
+        binding.buttonKeepAlive.setOnClickListener {
+            startActivity(KeepAliveActivity.intent(this))
+        }
     }
 
     override fun onResume() {
@@ -139,6 +144,16 @@ class McpSettingsActivity : AppCompatActivity() {
             if (sp.mcpEnabled) R.string.mcp_settings_status_enabled
             else R.string.mcp_settings_status_disabled
         )
+        // The foreground-service notification is the only way to stop the server from
+        // outside the app; if it cannot be shown, point the user at the keep-alive screen.
+        binding.buttonKeepAlive.visibility = if (
+            KeepAlivePermissions.hasNotificationPermission(this) &&
+            KeepAlivePermissions.isIgnoringBatteryOptimizations(this)
+        ) {
+            android.view.View.GONE
+        } else {
+            android.view.View.VISIBLE
+        }
     }
 
     private fun refreshConnectionInfo() {

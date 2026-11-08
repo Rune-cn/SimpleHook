@@ -72,6 +72,16 @@
                         android:textAppearance="?attr/textAppearanceBodySmall"
                         android:textColor="?attr/colorOnSurfaceVariant"
                         tools:text="127.0.0.1:57321" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonKeepAlive"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:visibility="gone"
+                        android:text="@string/mcp_settings_open_keepalive"
+                        tools:visibility="visible" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

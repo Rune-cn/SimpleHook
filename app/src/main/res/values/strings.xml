@@ -929,6 +929,7 @@
     <string name="mcp_settings_invalid_port">端口需在 1024 到 65535 之间</string>
     <string name="mcp_settings_restart_required">设置已保存，重启 MCP 服务后生效</string>
     <string name="mcp_settings_start_rejected">系统拒绝启动 MCP 服务，请保持应用在前台后重试</string>
+    <string name="mcp_settings_open_keepalive">通知或后台权限未开启，去保活设置</string>
     <string name="mcp_settings_security_warning">安全提示：MCP 服务会把 Hook 配置与抓取到的记录（可能包含账号、令牌等敏感信息）暴露给已连接的客户端，请只使用你信任的客户端，并在不使用时关闭服务。</string>
     <string name="mcp_service_notification_title">SimpleHook MCP 服务运行中</string>
     <string name="mcp_service_notification_stop">停止</string>
@@ -936,5 +937,39 @@
     <string name="mcp_service_channel_name">MCP 服务</string>
     <string name="mcp_service_channel_description">MCP 服务运行状态</string>
 
-
+    <!-- Keep-alive -->
+    <string name="main_settings_title_keepalive">保活设置</string>
+    <string name="main_settings_summary_keepalive">通知权限与后台无限制，避免服务被系统清理</string>
+    <string name="keepalive_title">保活设置</string>
+    <string name="keepalive_overview_ok">已具备保活条件</string>
+    <string name="keepalive_overview_pending">还有权限未授予，服务可能被系统限制</string>
+    <string name="keepalive_device_format">设备：%1$s</string>
+    <string name="keepalive_status_granted">已允许</string>
+    <string name="keepalive_status_missing">未允许</string>
+    <string name="keepalive_status_unrestricted">已无限制</string>
+    <string name="keepalive_status_restricted">受限制</string>
+    <string name="keepalive_notification_title">通知权限</string>
+    <string name="keepalive_notification_summary">前台服务需要显示常驻通知。通知被关闭时服务仍会运行，但你看不到也无法从通知停止它；在部分系统上还会因此被限制后台运行。</string>
+    <string name="keepalive_notification_action_request">申请通知权限</string>
+    <string name="keepalive_notification_action_settings">去系统设置开启</string>
+    <string name="keepalive_notification_action_done">已允许</string>
+    <string name="keepalive_notification_denied">未授予通知权限，可在系统设置中再次开启</string>
+    <string name="keepalive_battery_title">后台运行无限制</string>
+    <string name="keepalive_battery_summary">系统默认会优化后台应用：息屏或长时间不用时可能冻结进程并断开连接。设为「无限制」可让服务持续运行，代价是耗电略有增加。</string>
+    <string name="keepalive_battery_action">申请后台无限制</string>
+    <string name="keepalive_battery_action_done">已无限制</string>
+    <string name="keepalive_battery_system_page">打开系统电池优化列表</string>
+    <string name="keepalive_battery_dialog_title">设置后台无限制</string>
+    <string name="keepalive_battery_dialog_message">两种方式：直接用系统弹窗为本应用申请豁免，或打开电池优化列表手动找到本应用。后者在部分系统更稳妥。</string>
+    <string name="keepalive_battery_dialog_request">直接申请</string>
+    <string name="keepalive_battery_dialog_manual">打开列表手动设置</string>
+    <string name="keepalive_autostart_title">自启动 / 后台运行</string>
+    <string name="keepalive_autostart_summary">部分国产系统（MIUI、EMUI、ColorOS 等）额外有「自启动」开关，需在对应系统页面手动允许。该页面由系统提供，并非所有机型都有。</string>
+    <string name="keepalive_autostart_action">打开自启动设置</string>
+    <string name="keepalive_autostart_action_rom">打开 %1$s 自启动设置</string>
+    <string name="keepalive_autostart_unavailable">当前系统没有单独的自启动页面</string>
+    <string name="keepalive_autostart_not_found">未找到自启动设置页，请到系统设置中手动允许</string>
+    <string name="keepalive_autostart_opened">已打开 %1$s 的自启动设置</string>
+    <string name="keepalive_no_settings_page">当前系统没有该设置页</string>
+    <string name="keepalive_footnote">说明：Android 没有提供「后台无限制」的统一开关，本页展示的是系统实际状态（是否豁免电池优化）。国产系统可能另有自启动、后台运行等入口，需在系统设置中确认。关闭本应用的后台限制会影响所有需要长期运行的功能（如 MCP 服务）。</string>
 </resources>

@@ -61,6 +61,11 @@
             app:key="mcpServer"
             app:summary="@string/main_settings_summary_mcp"
             app:title="@string/main_settings_title_mcp" />
+        <Preference
+            app:icon="@drawable/ic_settings_keepalive_24"
+            app:key="keepAlive"
+            app:summary="@string/main_settings_summary_keepalive"
+            app:title="@string/main_settings_title_keepalive" />
     </PreferenceCategory>
     <PreferenceCategory
         app:iconSpaceReserved="false"

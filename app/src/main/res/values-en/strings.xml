@@ -780,10 +780,47 @@ You can try signing it manually with MT Manager or a similar tool before install
     <string name="mcp_settings_invalid_port">Port must be between 1024 and 65535</string>
     <string name="mcp_settings_restart_required">Saved; restart the MCP server to apply</string>
     <string name="mcp_settings_start_rejected">The system refused to start the MCP server. Keep the app in the foreground and try again.</string>
+    <string name="mcp_settings_open_keepalive">Notifications or background not allowed — open keep-alive</string>
     <string name="mcp_settings_security_warning">Security: the MCP server exposes hook configs and captured records (which may contain accounts, tokens and other secrets) to connected clients. Only use clients you trust and stop the server when you are done.</string>
     <string name="mcp_service_notification_title">SimpleHook MCP server running</string>
     <string name="mcp_service_notification_stop">Stop</string>
     <string name="mcp_service_notification_foreground_rejected">The system refused the foreground promotion; the server may be stopped when the app is backgrounded</string>
     <string name="mcp_service_channel_name">MCP server</string>
     <string name="mcp_service_channel_description">MCP server status</string>
+
+    <!-- Keep-alive -->
+    <string name="main_settings_title_keepalive">Keep-alive</string>
+    <string name="main_settings_summary_keepalive">Notifications and unrestricted background so the service is not killed</string>
+    <string name="keepalive_title">Keep-alive</string>
+    <string name="keepalive_overview_ok">Ready to stay alive</string>
+    <string name="keepalive_overview_pending">Some permissions are missing; the service may be restricted</string>
+    <string name="keepalive_device_format">Device: %1$s</string>
+    <string name="keepalive_status_granted">Allowed</string>
+    <string name="keepalive_status_missing">Not allowed</string>
+    <string name="keepalive_status_unrestricted">Unrestricted</string>
+    <string name="keepalive_status_restricted">Restricted</string>
+    <string name="keepalive_notification_title">Notification permission</string>
+    <string name="keepalive_notification_summary">A foreground service shows an ongoing notification. If notifications are off the service still runs, but you cannot see or stop it from the notification, and some builds restrict it further.</string>
+    <string name="keepalive_notification_action_request">Request notification permission</string>
+    <string name="keepalive_notification_action_settings">Open system settings</string>
+    <string name="keepalive_notification_action_done">Allowed</string>
+    <string name="keepalive_notification_denied">Notification permission not granted; you can enable it in system settings</string>
+    <string name="keepalive_battery_title">Unrestricted background</string>
+    <string name="keepalive_battery_summary">Android optimises background apps: with the screen off or after a long idle period the process may be frozen and connections dropped. Setting the app to "unrestricted" keeps the service running at a small battery cost.</string>
+    <string name="keepalive_battery_action">Allow unrestricted background</string>
+    <string name="keepalive_battery_action_done">Unrestricted</string>
+    <string name="keepalive_battery_system_page">Open the battery optimisation list</string>
+    <string name="keepalive_battery_dialog_title">Unrestricted background</string>
+    <string name="keepalive_battery_dialog_message">Two ways: request the exemption with the system dialog, or open the battery-optimisation list and pick this app manually. The manual route is more reliable on some builds.</string>
+    <string name="keepalive_battery_dialog_request">Request directly</string>
+    <string name="keepalive_battery_dialog_manual">Open list and pick manually</string>
+    <string name="keepalive_autostart_title">Autostart / background run</string>
+    <string name="keepalive_autostart_summary">Some vendor ROMs (MIUI, EMUI, ColorOS, ...) have an extra "autostart" switch that must be allowed on a vendor page. That page is provided by the ROM and does not exist on every device.</string>
+    <string name="keepalive_autostart_action">Open autostart settings</string>
+    <string name="keepalive_autostart_action_rom">Open %1$s autostart settings</string>
+    <string name="keepalive_autostart_unavailable">This system has no separate autostart page</string>
+    <string name="keepalive_autostart_not_found">Autostart page not found; allow it manually in system settings</string>
+    <string name="keepalive_autostart_opened">Opened the %1$s autostart settings</string>
+    <string name="keepalive_no_settings_page">This system does not provide that settings page</string>
+    <string name="keepalive_footnote">Note: Android has no single "unrestricted background" switch. This page shows the real system state (whether the app is exempt from battery optimisation). Vendor ROMs may have additional autostart or background-run pages; confirm them in system settings. Removing background limits affects every long-running feature, including the MCP server.</string>
 </resources>

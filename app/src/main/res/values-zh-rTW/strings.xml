@@ -788,10 +788,47 @@
     <string name="mcp_settings_invalid_port">連接埠需介於 1024 到 65535 之間</string>
     <string name="mcp_settings_restart_required">設定已儲存，重新啟動 MCP 服務後生效</string>
     <string name="mcp_settings_start_rejected">系統拒絕啟動 MCP 服務，請保持應用在前台後重試</string>
+    <string name="mcp_settings_open_keepalive">通知或背景權限未開啟，去保活設定</string>
     <string name="mcp_settings_security_warning">安全提示：MCP 服務會把 Hook 設定與擷取到的紀錄（可能包含帳號、權杖等敏感資訊）暴露給已連線的用戶端，請只使用你信任的用戶端，並在不使用時關閉服務。</string>
     <string name="mcp_service_notification_title">SimpleHook MCP 服務執行中</string>
     <string name="mcp_service_notification_stop">停止</string>
     <string name="mcp_service_notification_foreground_rejected">前台服務被系統拒絕，服務可能被系統回收，請檢查權限或在應用內重新開啟</string>
     <string name="mcp_service_channel_name">MCP 服務</string>
     <string name="mcp_service_channel_description">MCP 服務執行狀態</string>
+
+    <!-- Keep-alive -->
+    <string name="main_settings_title_keepalive">保活設定</string>
+    <string name="main_settings_summary_keepalive">通知權限與背景無限制，避免服務被系統清理</string>
+    <string name="keepalive_title">保活設定</string>
+    <string name="keepalive_overview_ok">已具備保活條件</string>
+    <string name="keepalive_overview_pending">還有權限未授予，服務可能被系統限制</string>
+    <string name="keepalive_device_format">裝置：%1$s</string>
+    <string name="keepalive_status_granted">已允許</string>
+    <string name="keepalive_status_missing">未允許</string>
+    <string name="keepalive_status_unrestricted">已無限制</string>
+    <string name="keepalive_status_restricted">受限制</string>
+    <string name="keepalive_notification_title">通知權限</string>
+    <string name="keepalive_notification_summary">前景服務需要顯示常駐通知。通知被關閉時服務仍會執行，但你看不到也無法從通知停止它；在部分系統上還會因此被限制背景執行。</string>
+    <string name="keepalive_notification_action_request">申請通知權限</string>
+    <string name="keepalive_notification_action_settings">去系統設定開啟</string>
+    <string name="keepalive_notification_action_done">已允許</string>
+    <string name="keepalive_notification_denied">未授予通知權限，可在系統設定中再次開啟</string>
+    <string name="keepalive_battery_title">背景執行無限制</string>
+    <string name="keepalive_battery_summary">系統預設會最佳化背景應用：息屏或長時間不用時可能凍結程序並中斷連線。設為「無限制」可讓服務持續執行，代價是耗電略為增加。</string>
+    <string name="keepalive_battery_action">申請背景無限制</string>
+    <string name="keepalive_battery_action_done">已無限制</string>
+    <string name="keepalive_battery_system_page">開啟系統電池最佳化清單</string>
+    <string name="keepalive_battery_dialog_title">設定背景無限制</string>
+    <string name="keepalive_battery_dialog_message">兩種方式：直接用系統對話框為本應用申請豁免，或開啟電池最佳化清單手動找到本應用。後者在部分系統較為穩定。</string>
+    <string name="keepalive_battery_dialog_request">直接申請</string>
+    <string name="keepalive_battery_dialog_manual">開啟清單手動設定</string>
+    <string name="keepalive_autostart_title">自啟動 / 背景執行</string>
+    <string name="keepalive_autostart_summary">部分廠牌系統（MIUI、EMUI、ColorOS 等）額外有「自啟動」開關，需在對應系統頁面手動允許。該頁面由系統提供，並非所有機型都有。</string>
+    <string name="keepalive_autostart_action">開啟自啟動設定</string>
+    <string name="keepalive_autostart_action_rom">開啟 %1$s 自啟動設定</string>
+    <string name="keepalive_autostart_unavailable">目前系統沒有獨立的自啟動頁面</string>
+    <string name="keepalive_autostart_not_found">找不到自啟動設定頁，請到系統設定中手動允許</string>
+    <string name="keepalive_autostart_opened">已開啟 %1$s 的自啟動設定</string>
+    <string name="keepalive_no_settings_page">目前系統沒有該設定頁</string>
+    <string name="keepalive_footnote">說明：Android 沒有提供「背景無限制」的統一開關，本頁顯示的是系統實際狀態（是否豁免電池最佳化）。廠牌系統可能另有自啟動、背景執行等入口，需在系統設定中確認。關閉本應用的背景限制會影響所有需要長期執行的功能（如 MCP 服務）。</string>
 </resources>

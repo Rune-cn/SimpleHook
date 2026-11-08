@@ -195,7 +195,52 @@ def main() -> int:
     if "FOREGROUND_SERVICE_TYPE_SPECIAL_USE" not in service_src:
         problems.append("McpService.kt: startForeground must pass SPECIAL_USE on API 34+")
 
-    # 7. Locales must stay in sync for the keys this feature adds.
+    # 7. Keep-alive screen: resources, binding ids, manifest entry, locale parity.
+    keepalive_layout = RES / "layout/activity_keep_alive.xml"
+    if not keepalive_layout.exists():
+        problems.append("layout/activity_keep_alive.xml is missing")
+    else:
+        layout_text = read(keepalive_layout)
+        ka_ids = set(re.findall(r'android:id="@\+id/(\w+)"', layout_text))
+        ka_activity = APP / "java/me/simpleHook/feature/keepalive/KeepAliveActivity.kt"
+        if not ka_activity.exists():
+            problems.append("KeepAliveActivity.kt is missing")
+        else:
+            ka_src = read(ka_activity)
+            for used in set(re.findall(r"binding\.(\w+)", ka_src)):
+                if used == "root" or used[:1].isupper():
+                    continue
+                if used not in ka_ids:
+                    problems.append(f"KeepAliveActivity: binding.{used} has no view in the layout")
+            for ref in set(re.findall(r"R\.string\.(\w+)", ka_src)):
+                if ref not in default_strings:
+                    problems.append(f"KeepAliveActivity: missing R.string.{ref}")
+        for ref in re.findall(r"@string/([\w.]+)", layout_text):
+            if ref != "appbar_scrolling_view_behavior" and ref not in default_strings:
+                problems.append(f"activity_keep_alive.xml: missing @string/{ref}")
+        for ref in re.findall(r"@drawable/([\w.]+)", layout_text):
+            if ref not in drawables:
+                problems.append(f"activity_keep_alive.xml: missing @drawable/{ref}")
+
+    # Manifest: the screen must exist, must not be exported, and the battery-exemption
+    # permission must be declared or the request dialog can never be shown.
+    if 'android:name=".feature.keepalive.KeepAliveActivity"' not in manifest:
+        problems.append("AndroidManifest.xml: KeepAliveActivity is not declared")
+    if "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" not in manifest:
+        problems.append("AndroidManifest.xml: REQUEST_IGNORE_BATTERY_OPTIMIZATIONS missing")
+    if "android.permission.POST_NOTIFICATIONS" not in manifest:
+        problems.append("AndroidManifest.xml: POST_NOTIFICATIONS missing")
+
+    # Keep-alive locale parity.
+    ka_keys = {k for k in default_strings if k.startswith(("keepalive_", "main_settings_title_keepalive",
+                                                           "main_settings_summary_keepalive"))}
+    for locale in ["values-en", "values-zh-rTW"]:
+        locale_strings = strings_of(RES / f"{locale}/strings.xml")
+        missing = sorted(ka_keys - locale_strings)
+        if missing:
+            problems.append(f"{locale}/strings.xml: missing {len(missing)} keep-alive string(s): {missing}")
+
+    # 8. Locales must stay in sync for the keys this feature adds.
     mcp_keys = {k for k in default_strings if k.startswith(("mcp_", "main_settings_title_mcp",
                                                            "main_settings_summary_mcp"))}
     for locale in ["values-en", "values-zh-rTW"]:
