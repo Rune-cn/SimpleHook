@@ -92,9 +92,10 @@ class McpSelfCheckTest {
 
         // Then the checker itself, on the same port, so a failure here isolates the checker
         // rather than the test setup.
-        val direct = McpSelfCheck(port = serverPort, authToken = token).run()
+        val checker = McpSelfCheck(port = serverPort, authToken = token)
+        val direct = checker.run()
         assertTrue(
-            "checker must succeed against a bound server: " +
+            "checker must succeed: dialled=${checker.target} expected=127.0.0.1:$serverPort " +
                 "stage=${direct.stage} msg=${direct.message} detail=${direct.detail}",
             direct.ok
         )

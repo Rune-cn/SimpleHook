@@ -47,6 +47,10 @@ class McpSelfCheck(
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
+    /** The `host:port` this instance dialled on the last [run]; for diagnostics only. */
+    var target: String = ""
+        private set
+
     enum class Stage { PORT, HTTP, MCP, DONE }
 
     data class Result(
@@ -68,6 +72,10 @@ class McpSelfCheck(
      * [Result.message] or [Result.detail].
      */
     fun run(): Result {
+        // Diagnostic: report exactly what this instance will dial, so a caller/test can prove
+        // the values reached the object.
+        target = "$host:$port"
+
         // Stage 1: can we open a TCP connection at all?
         val socket = try {
             Socket().apply {
