@@ -787,9 +787,11 @@
     <string name="mcp_settings_token_regenerated">權杖已重設</string>
     <string name="mcp_settings_invalid_port">連接埠需介於 1024 到 65535 之間</string>
     <string name="mcp_settings_restart_required">設定已儲存，重新啟動 MCP 服務後生效</string>
+    <string name="mcp_settings_start_rejected">系統拒絕啟動 MCP 服務，請保持應用在前台後重試</string>
     <string name="mcp_settings_security_warning">安全提示：MCP 服務會把 Hook 設定與擷取到的紀錄（可能包含帳號、權杖等敏感資訊）暴露給已連線的用戶端，請只使用你信任的用戶端，並在不使用時關閉服務。</string>
     <string name="mcp_service_notification_title">SimpleHook MCP 服務執行中</string>
     <string name="mcp_service_notification_stop">停止</string>
+    <string name="mcp_service_notification_foreground_rejected">前台服務被系統拒絕，服務可能被系統回收，請檢查權限或在應用內重新開啟</string>
     <string name="mcp_service_channel_name">MCP 服務</string>
     <string name="mcp_service_channel_description">MCP 服務執行狀態</string>
 </resources>

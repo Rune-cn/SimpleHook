@@ -108,6 +108,23 @@ and are annotated (`readOnlyHint`, `destructiveHint`) in `annotations`.
 ## 4. Security model
 
 * The server is **off by default**; starting it requires an explicit foreground service.
+
+### Foreground-service type
+
+The service is declared as `android:foregroundServiceType="specialUse"` with a
+`PROPERTY_SPECIAL_USE_FGS_SUBTYPE` of `mcp_local_server`, and `startForeground()` on
+Android 14+ passes `FOREGROUND_SERVICE_TYPE_SPECIAL_USE`.
+
+`connectedDevice` is **wrong here** even though the server is a network listener: from
+Android 14 (targetSdk 34) that type additionally requires one of `BLUETOOTH_CONNECT`,
+`CHANGE_NETWORK_STATE`, `CHANGE_WIFI_STATE`, `CHANGE_WIFI_MULTICAST_STATE`, `NFC`,
+`TRANSMIT_IR`, … at runtime (`attrs_manifest.xml` in the platform SDK, `connectedDevice`
+flag). A loopback-only socket does not need any of them, and requesting them would widen
+the app's privacy surface for nothing; starting the FGS without them throws
+`SecurityException` (verified on device, targetSdk 36).
+
+`scripts/check_mcp_static.py` fails the build if the manifest type and the runtime type
+diverge, or if a restricted type is used without its prerequisite permission.
 * Loopback bind only, bearer token required, `Origin` allow-list.
 * Every tool argument is validated against its declared schema before use.
 * Mutating tools can be disabled entirely; the UI shows the active mode.

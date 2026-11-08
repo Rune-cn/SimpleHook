@@ -14,9 +14,13 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- MCP server: the foreground service keeps the loopback endpoint alive while a
-         desktop client is connected. -->
+         desktop client is connected.
+         Type is `specialUse`, not `connectedDevice`: from Android 14 (targetSdk 34) the
+         `connectedDevice` type additionally requires one of BLUETOOTH_*, CHANGE_NETWORK_STATE,
+         CHANGE_WIFI_STATE, NFC, ... at runtime, which a loopback-only socket server does not
+         have and must not request. `specialUse` only requires this normal permission. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission
         android:name="android.permission.RECEIVE_BOOT_COMPLETED"
         tools:node="remove" />
@@ -86,12 +90,19 @@
             android:exported="false"
             android:label="@string/mcp_settings_title" />
 
-        <!-- Hosts the loopback MCP endpoint while a client is connected. -->
+        <!-- Hosts the loopback MCP endpoint while a client is connected.
+             `specialUse` is the correct type for a device-local server that is not a
+             media/location/call/data-sync/Bluetooth use case; the subtype explains the
+             purpose to the user and to app-store review. -->
         <service
             android:name=".feature.mcp.service.McpService"
             android:exported="false"
-            android:foregroundServiceType="connectedDevice"
-            android:stopWithTask="false" />
+            android:foregroundServiceType="specialUse"
+            android:stopWithTask="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="mcp_local_server" />
+        </service>
         <activity
             android:name=".feature.backup.ui.BackupActivity"
             android:exported="true"

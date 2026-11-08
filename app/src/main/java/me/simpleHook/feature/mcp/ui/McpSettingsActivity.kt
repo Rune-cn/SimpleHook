@@ -113,7 +113,13 @@ class McpSettingsActivity : AppCompatActivity() {
                 binding.switchHttp.isChecked = true
             }
             sp.ensureMcpAuthToken()
-            McpService.start(this)
+            if (!McpService.start(this)) {
+                // The system refused the start (background restriction): keep the UI honest
+                // instead of showing "running" for a server that never started.
+                sp.mcpEnabled = false
+                binding.switchServer.isChecked = false
+                showToast(getString(R.string.mcp_settings_start_rejected))
+            }
         } else {
             McpService.stop(this)
         }

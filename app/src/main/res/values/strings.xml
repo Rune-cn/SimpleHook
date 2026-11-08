@@ -928,9 +928,11 @@
     <string name="mcp_settings_token_regenerated">令牌已重置</string>
     <string name="mcp_settings_invalid_port">端口需在 1024 到 65535 之间</string>
     <string name="mcp_settings_restart_required">设置已保存，重启 MCP 服务后生效</string>
+    <string name="mcp_settings_start_rejected">系统拒绝启动 MCP 服务，请保持应用在前台后重试</string>
     <string name="mcp_settings_security_warning">安全提示：MCP 服务会把 Hook 配置与抓取到的记录（可能包含账号、令牌等敏感信息）暴露给已连接的客户端，请只使用你信任的客户端，并在不使用时关闭服务。</string>
     <string name="mcp_service_notification_title">SimpleHook MCP 服务运行中</string>
     <string name="mcp_service_notification_stop">停止</string>
+    <string name="mcp_service_notification_foreground_rejected">前台服务被系统拒绝，服务可能被系统回收，请检查权限或在应用内重新开启</string>
     <string name="mcp_service_channel_name">MCP 服务</string>
     <string name="mcp_service_channel_description">MCP 服务运行状态</string>
 

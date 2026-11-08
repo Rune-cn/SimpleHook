@@ -101,8 +101,13 @@ class McpService : Service() {
             return START_NOT_STICKY
         }
 
-        startForegroundCompat()
-        updateNotification(summary(httpStarted, lineStarted))
+        // Without the promotion the platform may still stop the service while the app is
+        // backgrounded, so tell the user rather than failing silently.
+        val foreground = startForegroundCompat()
+        updateNotification(
+            if (foreground) summary(httpStarted, lineStarted)
+            else getString(R.string.mcp_service_notification_foreground_rejected)
+        )
         return START_NOT_STICKY
     }
 
@@ -125,15 +130,38 @@ class McpService : Service() {
         return parts.joinToString(" · ").ifEmpty { "stopped" }
     }
 
-    private fun startForegroundCompat() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                buildNotification("starting"),
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, buildNotification("starting"))
+    /**
+     * Promotes the service to the foreground.
+     *
+     * The type matches `android:foregroundServiceType="specialUse"` in the manifest; passing
+     * `connectedDevice` here would be rejected from Android 14 on unless the app also holds a
+     * Bluetooth/NFC/network-state permission at runtime, which a loopback-only server does not
+     * need. Below API 34 the type parameter is not required, so the two-argument form is used
+     * to avoid depending on a constant that does not exist on older devices.
+     *
+     * A failure is logged instead of propagated: without the promotion the service is still
+     * usable while the app is in the foreground, and crashing the whole process on a
+     * platform policy check would lose the user's in-progress work in the main UI.
+     */
+    private fun startForegroundCompat(): Boolean {
+        val notification = buildNotification("starting")
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+            true
+        } catch (invalid: RuntimeException) {
+            // SecurityException (permission/policy refusal) and
+            // InvalidForegroundServiceTypeException both derive from RuntimeException. Keep
+            // serving instead of crashing the process; the cause is recorded in the log.
+            log("startForeground rejected: ${invalid.javaClass.simpleName}: ${invalid.message}")
+            false
         }
     }
 
@@ -194,12 +222,32 @@ class McpService : Service() {
         const val ACTION_STOP = "me.simpleHook.action.MCP_STOP"
         const val ACTION_START = "me.simpleHook.action.MCP_START"
 
-        fun start(context: Context) {
+        /**
+         * Starts the server service.
+         *
+         * `startForegroundService` throws when the app is not allowed to start a foreground
+         * service from the current state (for example while backgrounded). That is a user-
+         * visible configuration problem, not a crash, so it is reported through the return
+         * value and the caller shows a message.
+         *
+         * @return true when the start request was accepted by the system.
+         */
+        fun start(context: Context): Boolean {
             val intent = Intent(context, McpService::class.java).setAction(ACTION_START)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
+            return try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+                true
+            } catch (notAllowed: RuntimeException) {
+                // ForegroundServiceStartNotAllowedException (API 31+) and friends.
+                android.util.Log.w(
+                    TAG,
+                    "startForegroundService rejected: ${notAllowed.javaClass.simpleName}"
+                )
+                false
             }
         }
 

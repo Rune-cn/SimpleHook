@@ -141,7 +141,61 @@ def main() -> int:
                 "(missing import will fail the build)"
             )
 
-    # 6. Locales must stay in sync for the keys this feature adds.
+    # 6. The foreground-service type must be one the app can actually start.
+    #    Types in RESTRICTED_TYPES require an extra runtime permission (or user action) that a
+    #    loopback-only MCP server must not request; `connectedDevice` for example additionally
+    #    needs BLUETOOTH_CONNECT, CHANGE_NETWORK_STATE, CHANGE_WIFI_STATE, NFC, ... from
+    #    Android 14 on, and starting it without them throws SecurityException at runtime.
+    RESTRICTED_TYPES = {
+        "connectedDevice": "BLUETOOTH_*/CHANGE_NETWORK_STATE/CHANGE_WIFI_STATE/NFC",
+        "camera": "CAMERA",
+        "microphone": "RECORD_AUDIO",
+        "location": "ACCESS_FINE_LOCATION",
+        "phoneCall": "MANAGE_OWN_CALLS",
+        "mediaPlayback": "FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "mediaProjection": "screen capture consent",
+        "health": "ACTIVITY_RECOGNITION/BODY_SENSORS",
+        "shortService": "short-lived work only",
+    }
+    manifest = read(APP / "AndroidManifest.xml")
+    service_block = re.search(
+        r'<service\s+[^>]*android:name="\.feature\.mcp\.service\.McpService"[\s\S]*?</service>',
+        manifest)
+    if not service_block:
+        problems.append("AndroidManifest.xml: McpService declaration not found")
+    else:
+        block = service_block.group(0)
+        type_match = re.search(r'android:foregroundServiceType="([^"]+)"', block)
+        if not type_match:
+            problems.append("AndroidManifest.xml: McpService has no foregroundServiceType")
+        else:
+            declared = {t.strip() for t in type_match.group(1).split("|")}
+            for name in sorted(declared):
+                if name in RESTRICTED_TYPES:
+                    problems.append(
+                        f"AndroidManifest.xml: McpService uses '{name}', which needs "
+                        f"{RESTRICTED_TYPES[name]}; the MCP server must use specialUse"
+                    )
+            if "specialUse" not in declared:
+                problems.append("AndroidManifest.xml: McpService must use specialUse")
+            if "android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" not in block:
+                problems.append(
+                    "AndroidManifest.xml: specialUse requires a "
+                    "PROPERTY_SPECIAL_USE_FGS_SUBTYPE property"
+                )
+        for perm in ["android.permission.FOREGROUND_SERVICE",
+                     "android.permission.FOREGROUND_SERVICE_SPECIAL_USE"]:
+            if perm not in manifest:
+                problems.append(f"AndroidManifest.xml: missing {perm}")
+
+    # The runtime startForeground() type must match the manifest declaration.
+    service_src = read(SRC / "service/McpService.kt")
+    if "FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE" in service_src:
+        problems.append("McpService.kt: startForeground still uses CONNECTED_DEVICE")
+    if "FOREGROUND_SERVICE_TYPE_SPECIAL_USE" not in service_src:
+        problems.append("McpService.kt: startForeground must pass SPECIAL_USE on API 34+")
+
+    # 7. Locales must stay in sync for the keys this feature adds.
     mcp_keys = {k for k in default_strings if k.startswith(("mcp_", "main_settings_title_mcp",
                                                            "main_settings_summary_mcp"))}
     for locale in ["values-en", "values-zh-rTW"]:

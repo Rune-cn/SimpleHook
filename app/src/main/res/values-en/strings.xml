@@ -779,9 +779,11 @@ You can try signing it manually with MT Manager or a similar tool before install
     <string name="mcp_settings_token_regenerated">Token reset</string>
     <string name="mcp_settings_invalid_port">Port must be between 1024 and 65535</string>
     <string name="mcp_settings_restart_required">Saved; restart the MCP server to apply</string>
+    <string name="mcp_settings_start_rejected">The system refused to start the MCP server. Keep the app in the foreground and try again.</string>
     <string name="mcp_settings_security_warning">Security: the MCP server exposes hook configs and captured records (which may contain accounts, tokens and other secrets) to connected clients. Only use clients you trust and stop the server when you are done.</string>
     <string name="mcp_service_notification_title">SimpleHook MCP server running</string>
     <string name="mcp_service_notification_stop">Stop</string>
+    <string name="mcp_service_notification_foreground_rejected">The system refused the foreground promotion; the server may be stopped when the app is backgrounded</string>
     <string name="mcp_service_channel_name">MCP server</string>
     <string name="mcp_service_channel_description">MCP server status</string>
 </resources>
